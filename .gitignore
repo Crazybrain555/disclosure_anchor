@@ -167,7 +167,7 @@ dbhub.toml
 
 # Codex/agent working state (local, session-specific)
 docs/agent/
-docs/巨潮api.md
+
 
 # ============================================================
 # 其他

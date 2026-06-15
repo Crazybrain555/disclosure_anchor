@@ -1,0 +1,8 @@
+Access Key:
+${CNINFO_ACCESS_KEY}
+
+Access Secret:
+${CNINFO_ACCESS_SECRET}
+
+Access Token:
+${CNINFO_ACCESS_TOKEN}
