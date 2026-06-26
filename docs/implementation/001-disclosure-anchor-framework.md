@@ -333,6 +333,47 @@ disclosure_anchor/
 - `FileStorePathBuilder` 是唯一生成 raw/parser/derived 路径的组件。
 - `UnitOfWork` 是 use case 的事务边界。
 - 内部 ID 使用 ULID 或 UUIDv7；provider ID 只作为 `ProviderRef`。
+- `settings.py` 是运行配置入口；业务代码不直接读取 `.env` 文件或 `os.environ`。
+- CNINFO 凭据只允许通过环境变量注入到 settings，不进入 domain、DB、artifact、日志或 tracked repo 文件。
+
+### 3.3 CNINFO adapter 与凭据边界
+
+CNINFO 属于 source adapter，不属于 domain：
+
+```text
+application/ports/disclosure_source.py
+  定义 DisclosureSourcePort
+
+adapters/sources/cninfo/
+  client.py      # token、HTTP request、result envelope
+  mapper.py      # CNINFO 字段 → provider-neutral DTO
+  rate_limit.py
+  retry.py
+```
+
+未来 `settings.py` 读取：
+
+```text
+CNINFO_ACCESS_KEY
+CNINFO_ACCESS_SECRET
+CNINFO_ACCESS_TOKEN   # optional；优先用 key/secret 刷新 token
+```
+
+真实值放在仓库外，例如：
+
+```text
+~/.config/disclosure_anchor/cninfo.env
+```
+
+运行前由 shell、launch wrapper、Keychain/secret provider 或外置盘私有 config 注入环境变量。本仓库只保留变量名和占位符。
+
+接口字段、API code、token endpoint、返回 envelope 和公告字段映射以以下资料为准：
+
+```text
+docs/architecture/cninfo-webapi-usage-reference.md
+docs/architecture/cninfo-interfaces.schema.json
+docs/巨潮api.md
+```
 
 ---
 

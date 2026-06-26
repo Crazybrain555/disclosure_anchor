@@ -33,7 +33,11 @@ docs/implementation/
     doctor-checklist.md
     contract-checklist.md
     fixture-and-test-policy.md
+  runbooks/
+    phase00-environment-and-parser-validation.md
 ```
+
+`milestones/` 讲每阶段"做什么/为什么/验收口径"；`runbooks/` 讲"具体敲什么命令、产物落哪、每步怎么自检"，照着跑即可。
 
 推荐阅读顺序：
 

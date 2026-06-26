@@ -24,6 +24,7 @@ created_at: 2026-06-26
 - index sync。
 - PDF download。
 - source_access 查空记录。
+- CNINFO 凭据从 `settings.py` 注入 adapter；不在 adapter 外直接读取 `.env` 或 `os.environ`。
 
 
 ## 3. 实施细则
@@ -36,6 +37,9 @@ download_pdf(...)
 ```
 
 2. CNINFO adapter 负责 provider 参数转换和返回映射。
+   - 接口口径参考 `docs/architecture/cninfo-webapi-usage-reference.md`。
+   - 机器可读字段/参数参考 `docs/architecture/cninfo-interfaces.schema.json`。
+   - 凭据变量名参考 `docs/巨潮api.md`，真实值只来自仓库外私有环境。
 3. `sync_disclosure_index`：
 
 ```text
@@ -59,6 +63,7 @@ provider ref
 5. source_checkpoint 保存最近成功游标。
 6. rate_limit 和 retry 不使用外部队列。
 7. 查空也写 source_access。
+8. token 刷新、HTTP status、`resultcode`、行数、耗时可以记录；token、secret 和完整敏感响应不得写日志或入库。
 
 
 ## 4. 检查点
@@ -70,6 +75,7 @@ provider ref
 - 失败可重试。
 - provider ID 不作为内部主键。
 - 重复公告不重复写 raw。
+- 代码和日志不泄露 `CNINFO_ACCESS_KEY`、`CNINFO_ACCESS_SECRET` 或 `CNINFO_ACCESS_TOKEN`。
 
 
 ## 5. Definition of Done

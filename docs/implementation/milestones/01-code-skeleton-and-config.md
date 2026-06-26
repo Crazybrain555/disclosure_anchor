@@ -38,7 +38,14 @@ DATABASE_URL
 MINERU_MODEL_CACHE
 HF_HOME
 MODELSCOPE_CACHE
+CNINFO_ACCESS_KEY
+CNINFO_ACCESS_SECRET
+CNINFO_ACCESS_TOKEN
 ```
+
+CNINFO 配置在 Phase 01 只定义 settings 字段和示例占位，不实现 client，也不要求变量非空。
+真实凭据不得放在 repo-local `.env`、`.env.example`、docs、测试 fixture 或日志中；推荐放在
+`~/.config/disclosure_anchor/cninfo.env`、shell 环境、Keychain 或外置盘私有 config 中，由运行命令加载为环境变量。
 
 3. `FileStorePathBuilder` 提供：
 
@@ -77,6 +84,7 @@ make api
 - 外置盘未挂载时 doctor 失败。
 - `PathBuilder` 只返回相对路径或受控 runtime path。
 - repo 中没有硬编码 `/Volumes/AgentSSD` 的业务逻辑；只允许 `.env.example`、docs 出现。
+- repo 中没有真实 CNINFO 凭据；`.env.example` 只出现变量名和占位符。
 - `/v1/health` 可返回 ok。
 - unit tests 覆盖 settings、PathBuilder、ids。
 

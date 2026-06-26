@@ -37,8 +37,9 @@ created_at: 2026-06-26
 | A25 | CNINFO 指定 10 家公司可同步公告索引 | 07 | integration/manual | pending |
 | A26 | CNINFO PDF 下载进入 raw archive | 07 | integration/manual | pending |
 | A27 | 查空写 source_access | 07 | DB check | pending |
-| A28 | `make worker-once` 可从 pending 跑到 active run | 08 | end-to-end | pending |
-| A29 | worker 崩溃不破坏 raw archive | 08 | failure test | pending |
-| A30 | 外置盘未挂载时服务 fail closed | 01/08 | doctor/startup test | pending |
+| A28 | CNINFO 凭据只从环境变量进入 settings，且不写入 repo、DB、artifact 或日志 | 01/07 | settings test + review | pending |
+| A29 | `make worker-once` 可从 pending 跑到 active run | 08 | end-to-end | pending |
+| A30 | worker 崩溃不破坏 raw archive | 08 | failure test | pending |
+| A31 | 外置盘未挂载时服务 fail closed | 01/08 | doctor/startup test | pending |
 
 状态枚举：`pending / pass / fail / blocked / intentionally-deferred`。
