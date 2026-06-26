@@ -78,7 +78,7 @@ falls back to keyless. Each project opts in by listing only the servers it wants
                    "args": ["-y", "@playwright/mcp@0.0.76"] },
     "dbhub":     { "command": "/Users/zhang/.local/bin/npx",
                    "args": ["-y", "@bytebase/dbhub@0.22.3", "--transport", "stdio",
-                            "--config", "/Users/zhang/Programs/python_programs/disclosure_anchor/dbhub.toml"] }
+                            "--config", "/Users/zhang/dev/agent-invest/services/disclosure_anchor/dbhub.toml"] }
   }
 }
 ```
@@ -106,7 +106,7 @@ file only needs to add its extra servers (it does not replace the global `mcp_se
 enabled = true
 command = "/Users/zhang/.local/bin/npx"
 args = ["-y", "@bytebase/dbhub@0.22.3", "--transport", "stdio",
-        "--config", "/Users/zhang/Programs/python_programs/disclosure_anchor/dbhub.toml"]
+        "--config", "/Users/zhang/dev/agent-invest/services/disclosure_anchor/dbhub.toml"]
 startup_timeout_sec = 120
 tool_timeout_sec = 60
 enabled_tools = ["execute_sql"]
