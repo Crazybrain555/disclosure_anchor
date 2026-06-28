@@ -6,7 +6,7 @@
 - Python for MinerU: 3.13.13 at `/Volumes/AgentSSD/agent_system/services/disclosure_anchor/runtime/venvs/mineru-phase00`
 - MinerU: 3.4.0, backend `pipeline`, source `modelscope`
 - Model cache: `/Volumes/AgentSSD/agent_system/shared/model_cache/modelscope`
-- PostgreSQL: pass via Homebrew PostgreSQL 18.4 at `/opt/homebrew/opt/postgresql@18`; PGDATA is `/Volumes/AgentSSD/agent_system/postgres/pg18-main`; the temporary conda PostgreSQL env/cache and superseded PG17 paths were removed after validation. Socket-only posture (`port=55432`, `listen_addresses=''`, AgentSSD `unix_socket_directories`) is persisted in `postgresql.conf`, so a bare `pg_ctl -D <PGDATA> start` stays socket-only; `brew services` is not used.
+- PostgreSQL: pass via Homebrew PostgreSQL 18.4 at `/opt/homebrew/opt/postgresql@18`; PGDATA is `/Volumes/AgentSSD/agent_system/postgres/pg18-main`; the temporary conda PostgreSQL env/cache and superseded PG17 paths were removed after validation. `port=55432` and AgentSSD `unix_socket_directories` are persisted in `postgresql.conf`; a bare `pg_ctl -D <PGDATA> start` is the only sanctioned start path and `brew services` is not used. Connection posture was changed on 2026-06-28 from socket-only (`listen_addresses=''`) to localhost-only TCP (`listen_addresses='localhost'`, plus a scram password on role `disclosure_anchor`) so IDE/DBeaver clients can connect; it is not exposed beyond `127.0.0.1`.
 
 ## Parser Runs
 
@@ -27,7 +27,7 @@
 ## A01-A05 State
 
 - A01: pass, AgentSSD mounted and sentinel exists.
-- A02: pass, native PostgreSQL 18.4 can initialize, start, accept socket connections, create/drop a probe database, and stop with PGDATA on AgentSSD. Socket-only/55432 is persisted in `postgresql.conf` and re-verified by a bare `pg_ctl start` (both 127.0.0.1:5432 and :55432 report no response; the socket lives under AgentSSD).
+- A02: pass, native PostgreSQL 18.4 can initialize, start, accept socket connections, create/drop a probe database, and stop with PGDATA on AgentSSD. At validation time socket-only/55432 was persisted in `postgresql.conf` and re-verified by a bare `pg_ctl start` (both 127.0.0.1:5432 and :55432 reported no response; the socket lives under AgentSSD). (Updated 2026-06-28: connection posture was later switched to localhost-only TCP on `127.0.0.1:55432` for IDE/DBeaver access — see Environment above.)
 - A03: pass, model and uv caches were directed to AgentSSD.
 - A04: pass, normalized IR fixtures exist for all three sample roles, including full 209-page annual report.
 - A05: pass, document unit fixtures exist for all three sample roles, including full 209-page annual report.
