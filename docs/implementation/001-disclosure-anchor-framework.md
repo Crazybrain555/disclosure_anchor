@@ -34,7 +34,8 @@ disclosure_anchor
 
 | 决策项 | 采用方案 |
 |---|---|
-| PostgreSQL | Homebrew/native PostgreSQL，`PGDATA` 指向 `/Volumes/AgentSSD/agent_system/postgres/pg17-main` |
+| PostgreSQL | Homebrew/native PostgreSQL（`postgresql@18`），`PGDATA` 指向 `/Volumes/AgentSSD/agent_system/postgres/pg18-main` |
+| PG 启动约束 | socket-only：`port=55432` / `listen_addresses=''` / `unix_socket_directories=.../sockets` 已固化在 `postgresql.conf`；唯一合法启动 `pg_ctl -D <PGDATA>`，**禁止** `brew services start postgresql@18`（指向内置盘默认 cluster） |
 | MinerU | 原生 macOS batch worker 调用 MinerU，不放入 FastAPI 进程，不优先容器化 |
 | PG 多服务布局 | 单个 PostgreSQL cluster；未来每个兄弟服务独立 database；本服务库内分 private/public/ops schema |
 | 服务形态 | FastAPI + worker + PostgreSQL + 文件系统；不拆微服务 |
@@ -385,8 +386,8 @@ docs/巨潮api.md
 macOS host / Apple Silicon
 
 ├─ PostgreSQL native process
-│  ├─ PGDATA: /Volumes/AgentSSD/agent_system/postgres/pg17-main
-│  ├─ socket: /Volumes/AgentSSD/agent_system/postgres/sockets
+│  ├─ PGDATA: /Volumes/AgentSSD/agent_system/postgres/pg18-main
+│  ├─ socket: /Volumes/AgentSSD/agent_system/postgres/sockets （:55432, socket-only, 不开 TCP）
 │  └─ logs:   /Volumes/AgentSSD/agent_system/postgres/logs
 │
 ├─ disclosure-api
@@ -427,7 +428,7 @@ FastAPI 不加载 MinerU 模型。
     postgres.env
 
   postgres/
-    pg17-main/
+    pg18-main/
     sockets/
     logs/
 
@@ -504,7 +505,7 @@ FastAPI 不加载 MinerU 模型。
 当前只创建一个 cluster：
 
 ```text
-/Volumes/AgentSSD/agent_system/postgres/pg17-main
+/Volumes/AgentSSD/agent_system/postgres/pg18-main
 ```
 
 当前只创建一个 database：

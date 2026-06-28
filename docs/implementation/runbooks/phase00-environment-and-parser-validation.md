@@ -41,7 +41,7 @@ touch /Volumes/AgentSSD/agent_system/MOUNT_SENTINEL_DO_NOT_CREATE_ON_INTERNAL
 mkdir -p /Volumes/AgentSSD/agent_system/shared/model_cache/{mineru,huggingface,modelscope}
 mkdir -p /Volumes/AgentSSD/agent_system/shared/staging/{inbox,downloads,manual_uploads}
 mkdir -p /Volumes/AgentSSD/agent_system/shared/tmp
-mkdir -p /Volumes/AgentSSD/agent_system/postgres/{pg17-main,sockets,logs}
+mkdir -p /Volumes/AgentSSD/agent_system/postgres/{pg18-main,sockets,logs}
 mkdir -p /Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/{raw_documents,parser_artifacts}
 mkdir -p /Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/derived/{normalized_ir,document_unit_snapshots,exports}
 mkdir -p /Volumes/AgentSSD/agent_system/services/disclosure_anchor/runtime/{inbox,quarantine,failed,tmp,locks,pid,logs}
@@ -82,33 +82,51 @@ source /Volumes/AgentSSD/agent_system/config/model_cache.env
 > 目标只是"能起能停、PGDATA 在外置盘"。本阶段**不**建 schema/role/表（那是 milestone 02）。
 
 ```bash
-# 1) 安装（记录实际版本到报告，本 pack 假定 17.x）
-brew install postgresql@17
+# 1) 安装（记录实际版本到报告，本 pack 假定 18.x）
+brew install postgresql@18
 
-PG=$(brew --prefix postgresql@17)/bin
-PGDATA=/Volumes/AgentSSD/agent_system/postgres/pg17-main
+PG=$(brew --prefix postgresql@18)/bin
+PGDATA=/Volumes/AgentSSD/agent_system/postgres/pg18-main
 SOCK=/Volumes/AgentSSD/agent_system/postgres/sockets
 LOG=/Volumes/AgentSSD/agent_system/postgres/logs
 
-# 2) 初始化 cluster 到外置盘（pg17-main 必须为空目录）
-"$PG/initdb" -D "$PGDATA" -E UTF8 --locale=C
+# 2) 初始化 cluster 到外置盘（pg18-main 必须为空目录）
+"$PG/initdb" -D "$PGDATA" -E UTF8 --locale=C \
+  --username=disclosure_anchor \
+  --auth-local=trust \
+  --auth-host=scram-sha-256
 
-# 3) 把 socket 指向外置盘 sockets/
-echo "unix_socket_directories = '$SOCK'" >> "$PGDATA/postgresql.conf"
+# 3) 固化网络姿态进 PGDATA/postgresql.conf（第一层防御）：把 socket-only/55432/AgentSSD socket
+#    写进 cluster 自身配置，这样即使将来有人裸跑 `pg_ctl -D "$PGDATA" start`（不带 -o），
+#    也不会漂回 PostgreSQL 默认（5432 / localhost TCP / /tmp socket）。幂等：已加过就不重复追加。
+grep -q 'disclosure_anchor hardening' "$PGDATA/postgresql.conf" || cat >> "$PGDATA/postgresql.conf" <<EOF
 
-# 4) 起 / 查 / 停
-"$PG/pg_ctl" -D "$PGDATA" -l "$LOG/server.log" start
+# === disclosure_anchor hardening: persist socket-only posture ===
+port = 55432
+listen_addresses = ''
+unix_socket_directories = '$SOCK'
+EOF
+
+# 4) 起 / 查 / 停。-o 里同名参数现在是"启动时再确认"（与 conf 同值，第二层防御），不再是唯一来源。
+#    唯一合法启动方式：pg_ctl -D 本 PGDATA；禁止 `brew services start postgresql@18`（它指向内置盘默认 cluster）。
+"$PG/pg_ctl" -D "$PGDATA" -l "$LOG/server.log" \
+  -o "-k $SOCK -p 55432 -c listen_addresses=''" start
+
 "$PG/pg_ctl" -D "$PGDATA" status
-"$PG/psql" -h "$SOCK" -d postgres -c "select version();"
+"$PG/psql" -h "$SOCK" -p 55432 -U disclosure_anchor -d postgres \
+  -c "select version(), current_setting('data_directory');"
 "$PG/pg_ctl" -D "$PGDATA" stop
 ```
 
 自检：
 
-- [ ] `initdb` 把 PGDATA 建在 `pg17-main`，不在内置盘
-- [ ] `pg_ctl start/stop` 均成功，`server.log` 无 fatal
+- [ ] `initdb` 把 PGDATA 建在 `pg18-main`，不在内置盘
+- [ ] 三项（`port=55432` / `listen_addresses=''` / `unix_socket_directories`）已写进 `postgresql.conf`
+- [ ] 裸 `pg_ctl -D "$PGDATA" start`（不带 -o）也仍 socket-only + 55432 + AgentSSD socket（用 `show port/listen_addresses/unix_socket_directories` 验；`pg_isready -h 127.0.0.1 -p 5432` 与 `-p 55432` 均 no response）
+- [ ] `pg_ctl start/stop` 均成功
 - [ ] `psql` 能连上并打印版本
-- [ ] 实际 PG 版本号已记入报告（若非 17.x，更新 `pg17-main` 命名约定的备注）
+- [ ] 不使用、不依赖 `brew services start postgresql@18`
+- [ ] 实际 PG 版本号已记入报告（若非 18.x，更新 `pg18-main` 命名约定的备注）
 
 ---
 

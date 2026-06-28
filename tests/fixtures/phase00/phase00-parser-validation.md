@@ -6,7 +6,7 @@
 - Python for MinerU: 3.13.13 at `/Volumes/AgentSSD/agent_system/services/disclosure_anchor/runtime/venvs/mineru-phase00`
 - MinerU: 3.4.0, backend `pipeline`, source `modelscope`
 - Model cache: `/Volumes/AgentSSD/agent_system/shared/model_cache/modelscope`
-- PostgreSQL: pass via Homebrew PostgreSQL 17.10 at `/opt/homebrew/opt/postgresql@17`; PGDATA is `/Volumes/AgentSSD/agent_system/postgres/pg17-main`; the temporary conda PostgreSQL env/cache were removed after validation
+- PostgreSQL: pass via Homebrew PostgreSQL 18.4 at `/opt/homebrew/opt/postgresql@18`; PGDATA is `/Volumes/AgentSSD/agent_system/postgres/pg18-main`; the temporary conda PostgreSQL env/cache and superseded PG17 paths were removed after validation. Socket-only posture (`port=55432`, `listen_addresses=''`, AgentSSD `unix_socket_directories`) is persisted in `postgresql.conf`, so a bare `pg_ctl -D <PGDATA> start` stays socket-only; `brew services` is not used.
 
 ## Parser Runs
 
@@ -27,7 +27,7 @@
 ## A01-A05 State
 
 - A01: pass, AgentSSD mounted and sentinel exists.
-- A02: pass, native PostgreSQL 17.10 can initialize, start, accept socket connections, create/drop a probe database, and stop with PGDATA on AgentSSD.
+- A02: pass, native PostgreSQL 18.4 can initialize, start, accept socket connections, create/drop a probe database, and stop with PGDATA on AgentSSD. Socket-only/55432 is persisted in `postgresql.conf` and re-verified by a bare `pg_ctl start` (both 127.0.0.1:5432 and :55432 report no response; the socket lives under AgentSSD).
 - A03: pass, model and uv caches were directed to AgentSSD.
 - A04: pass, normalized IR fixtures exist for all three sample roles, including full 209-page annual report.
 - A05: pass, document unit fixtures exist for all three sample roles, including full 209-page annual report.
