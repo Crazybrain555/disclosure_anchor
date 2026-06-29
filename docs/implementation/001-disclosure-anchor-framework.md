@@ -35,7 +35,7 @@ disclosure_anchor
 | 决策项 | 采用方案 |
 |---|---|
 | PostgreSQL | Homebrew/native PostgreSQL（`postgresql@18`），`PGDATA` 指向 `/Volumes/AgentSSD/agent_system/postgres/pg18-main` |
-| PG 启动约束 | socket-only：`port=55432` / `listen_addresses=''` / `unix_socket_directories=.../sockets` 已固化在 `postgresql.conf`；唯一合法启动 `pg_ctl -D <PGDATA>`，**禁止** `brew services start postgresql@18`（指向内置盘默认 cluster） |
+| PG 启动约束 | localhost-only TCP + AgentSSD socket：`port=55432` / `listen_addresses='localhost'` / `unix_socket_directories=.../sockets` 已固化在 `postgresql.conf`；唯一合法启动 `pg_ctl -D <PGDATA>`，**禁止** `brew services start postgresql@18`（指向内置盘默认 cluster） |
 | MinerU | 原生 macOS batch worker 调用 MinerU，不放入 FastAPI 进程，不优先容器化 |
 | PG 多服务布局 | 单个 PostgreSQL cluster；未来每个兄弟服务独立 database；本服务库内分 private/public/ops schema |
 | 服务形态 | FastAPI + worker + PostgreSQL + 文件系统；不拆微服务 |
@@ -387,7 +387,8 @@ macOS host / Apple Silicon
 
 ├─ PostgreSQL native process
 │  ├─ PGDATA: /Volumes/AgentSSD/agent_system/postgres/pg18-main
-│  ├─ socket: /Volumes/AgentSSD/agent_system/postgres/sockets （:55432, socket-only, 不开 TCP）
+│  ├─ socket: /Volumes/AgentSSD/agent_system/postgres/sockets （:55432）
+│  ├─ localhost TCP: 127.0.0.1:55432 / ::1:55432（不监听局域网）
 │  └─ logs:   /Volumes/AgentSSD/agent_system/postgres/logs
 │
 ├─ disclosure-api
@@ -756,7 +757,7 @@ make test-contract
 /Volumes/AgentSSD 是否挂载
 MOUNT_SENTINEL 是否存在
 DATA_ROOT 是否可写
-PG socket 是否存在
+PG localhost TCP 或 AgentSSD socket 是否可连接
 DB migration 是否最新
 raw_documents 是否可读写
 parser_artifacts 是否可读写

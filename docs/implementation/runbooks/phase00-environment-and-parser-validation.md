@@ -96,33 +96,77 @@ LOG=/Volumes/AgentSSD/agent_system/postgres/logs
   --auth-local=trust \
   --auth-host=scram-sha-256
 
-# 3) 固化网络姿态进 PGDATA/postgresql.conf（第一层防御）：把 socket-only/55432/AgentSSD socket
-#    写进 cluster 自身配置，这样即使将来有人裸跑 `pg_ctl -D "$PGDATA" start`（不带 -o），
-#    也不会漂回 PostgreSQL 默认（5432 / localhost TCP / /tmp socket）。幂等：已加过就不重复追加。
-grep -q 'disclosure_anchor hardening' "$PGDATA/postgresql.conf" || cat >> "$PGDATA/postgresql.conf" <<EOF
+# 3) 固化网络姿态进 PGDATA/postgresql.conf（第一层防御）：把 localhost-only TCP、55432、AgentSSD
+#    socket 写进 cluster 自身配置。这样即使将来有人裸跑 `pg_ctl -D "$PGDATA" start`（不带 -o），
+#    也不会漂回 PostgreSQL 默认（5432 / /tmp socket）。幂等：若旧 socket-only block 已存在，原地
+#    替换成当前 block；若不存在，则追加一个当前 block。
+python3 - "$PGDATA/postgresql.conf" "$SOCK" <<'PY'
+import pathlib
+import sys
 
-# === disclosure_anchor hardening: persist socket-only posture ===
-port = 55432
-listen_addresses = ''
-unix_socket_directories = '$SOCK'
-EOF
+conf = pathlib.Path(sys.argv[1])
+sock = sys.argv[2]
+lines = conf.read_text(encoding="utf-8").splitlines()
+
+out = []
+i = 0
+while i < len(lines):
+    if "disclosure_anchor hardening" in lines[i]:
+        i += 1
+        while i < len(lines):
+            stripped = lines[i].strip()
+            if (
+                stripped == ""
+                or stripped.startswith("# === disclosure_anchor hardening")
+                or stripped.startswith("# === end disclosure_anchor PG settings")
+                or stripped.startswith("port =")
+                or stripped.startswith("listen_addresses =")
+                or stripped.startswith("unix_socket_directories =")
+            ):
+                i += 1
+                continue
+            break
+        continue
+    out.append(lines[i])
+    i += 1
+
+block = [
+    "",
+    "# === disclosure_anchor hardening: persist localhost-only TCP plus AgentSSD socket ===",
+    "port = 55432",
+    "listen_addresses = 'localhost'",
+    f"unix_socket_directories = '{sock}'",
+    "# === end disclosure_anchor PG settings ===",
+]
+conf.write_text("\n".join(out).rstrip() + "\n" + "\n".join(block) + "\n", encoding="utf-8")
+PY
 
 # 4) 起 / 查 / 停。-o 里同名参数现在是"启动时再确认"（与 conf 同值，第二层防御），不再是唯一来源。
 #    唯一合法启动方式：pg_ctl -D 本 PGDATA；禁止 `brew services start postgresql@18`（它指向内置盘默认 cluster）。
 "$PG/pg_ctl" -D "$PGDATA" -l "$LOG/server.log" \
-  -o "-k $SOCK -p 55432 -c listen_addresses=''" start
+  -o "-k $SOCK -p 55432 -c listen_addresses=localhost" -w start
 
 "$PG/pg_ctl" -D "$PGDATA" status
+
+# 可选：若需要 IDE/DBeaver/VSCode 走 TCP，请从私有环境变量设置本地开发密码，不要写入 repo 文档。
+# export DISCLOSURE_DEV_DB_PASSWORD='<set in private env>'
+if [ -n "${DISCLOSURE_DEV_DB_PASSWORD:-}" ]; then
+  "$PG/psql" -h "$SOCK" -p 55432 -U disclosure_anchor -d postgres \
+    -v db_password="$DISCLOSURE_DEV_DB_PASSWORD" \
+    -c "alter role disclosure_anchor password :'db_password';"
+fi
+
 "$PG/psql" -h "$SOCK" -p 55432 -U disclosure_anchor -d postgres \
-  -c "select version(), current_setting('data_directory');"
-"$PG/pg_ctl" -D "$PGDATA" stop
+  -c "select version(), current_setting('data_directory'), current_setting('listen_addresses');"
+"$PG/pg_isready" -h 127.0.0.1 -p 55432 -U disclosure_anchor
+"$PG/pg_ctl" -D "$PGDATA" -w stop
 ```
 
 自检：
 
 - [ ] `initdb` 把 PGDATA 建在 `pg18-main`，不在内置盘
-- [ ] 三项（`port=55432` / `listen_addresses=''` / `unix_socket_directories`）已写进 `postgresql.conf`
-- [ ] 裸 `pg_ctl -D "$PGDATA" start`（不带 -o）也仍 socket-only + 55432 + AgentSSD socket（用 `show port/listen_addresses/unix_socket_directories` 验；`pg_isready -h 127.0.0.1 -p 5432` 与 `-p 55432` 均 no response）
+- [ ] 三项（`port=55432` / `listen_addresses='localhost'` / `unix_socket_directories`）已写进 `postgresql.conf`
+- [ ] 裸 `pg_ctl -D "$PGDATA" start`（不带 -o）也仍 localhost-only TCP + 55432 + AgentSSD socket（用 `show port/listen_addresses/unix_socket_directories` 验；`pg_isready -h 127.0.0.1 -p 55432` accepting，`pg_isready -h 127.0.0.1 -p 5432` no response）
 - [ ] `pg_ctl start/stop` 均成功
 - [ ] `psql` 能连上并打印版本
 - [ ] 不使用、不依赖 `brew services start postgresql@18`

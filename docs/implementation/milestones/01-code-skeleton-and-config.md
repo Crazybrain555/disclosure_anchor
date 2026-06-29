@@ -46,6 +46,9 @@ CNINFO_ACCESS_TOKEN
 CNINFO 配置在 Phase 01 只定义 settings 字段和示例占位，不实现 client，也不要求变量非空。
 真实凭据不得放在 repo-local `.env`、`.env.example`、docs、测试 fixture 或日志中；推荐放在
 `~/.config/disclosure_anchor/cninfo.env`、shell 环境、Keychain 或外置盘私有 config 中，由运行命令加载为环境变量。
+`DATABASE_URL` 同样只从环境变量注入；本地开发连接姿态为 Homebrew PostgreSQL 18 / AgentSSD
+`pg18-main`，`127.0.0.1:55432` localhost-only TCP（也保留 AgentSSD Unix socket）。`.env.example` 只能写
+占位符，不得写入本机开发密码。
 
 3. `FileStorePathBuilder` 提供：
 
@@ -82,6 +85,7 @@ make api
 
 - `make doctor` 可运行。
 - 外置盘未挂载时 doctor 失败。
+- `DATABASE_URL` 由环境变量提供，示例配置不包含真实密码。
 - `PathBuilder` 只返回相对路径或受控 runtime path。
 - repo 中没有硬编码 `/Volumes/AgentSSD` 的业务逻辑；只允许 `.env.example`、docs 出现。
 - repo 中没有真实 CNINFO 凭据；`.env.example` 只出现变量名和占位符。

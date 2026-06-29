@@ -27,7 +27,7 @@ DISCLOSURE_RUNTIME_ROOT 指向 /Volumes/AgentSSD/agent_system/services/disclosur
 ## 2. PostgreSQL 检查
 
 ```text
-PG socket 可连接
+PG localhost TCP（127.0.0.1:55432）或 AgentSSD socket 可连接
 当前 database 是 disclosure_anchor
 migration version 最新
 disclosure_core / disclosure_public / disclosure_ops 存在
