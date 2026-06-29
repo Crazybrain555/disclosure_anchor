@@ -68,10 +68,9 @@ class TypedIdHelperTests(unittest.TestCase):
             "oe": new_outbox_event_id,
         }
         for prefix, factory in cases.items():
-            with self.subTest(prefix=prefix):
-                value = factory()
-                self.assertTrue(is_internal_id(value))
-                self.assertEqual(value.partition("_")[0], prefix)
+            value = factory()
+            self.assertTrue(is_internal_id(value), prefix)
+            self.assertEqual(value.partition("_")[0], prefix)
 
 
 if __name__ == "__main__":

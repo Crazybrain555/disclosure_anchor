@@ -79,6 +79,7 @@ class TrackedCompany(Base):
     __tablename__ = "tracked_company"
     __table_args__ = (
         UniqueConstraint("company_id", name="uq_tracked_company_company"),
+        Index("ix_tracked_company_security", "security_id"),
         {"schema": CORE_SCHEMA},
     )
 
@@ -105,6 +106,8 @@ class SourceAccess(Base):
     __tablename__ = "source_access"
     __table_args__ = (
         Index("ix_source_access_provider", "provider"),
+        Index("ix_source_access_company", "company_id"),
+        Index("ix_source_access_security", "security_id"),
         {"schema": CORE_SCHEMA},
     )
 
@@ -150,6 +153,7 @@ class Document(Base):
     __table_args__ = (
         Index("ix_document_company", "company_id"),
         Index("ix_document_security", "security_id"),
+        Index("ix_document_source_access", "source_access_id"),
         Index("ix_document_provider_ref", "provider", "provider_document_id"),
         Index("ix_document_raw_hash", "raw_file_hash"),
         {"schema": CORE_SCHEMA},

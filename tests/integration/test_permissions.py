@@ -39,7 +39,7 @@ class PermissionTests(unittest.TestCase):
 
     def test_reader_can_read_public_view(self) -> None:
         for role in (READER_ROLE, FUTURE_L2_READER_ROLE):
-            with self.subTest(role=role), self.engine.connect() as conn:
+            with self.engine.connect() as conn:
                 trans = conn.begin()
                 try:
                     conn.execute(text(f'SET ROLE "{role}"'))
@@ -97,6 +97,21 @@ class PermissionTests(unittest.TestCase):
                         "(event_id, event_type) VALUES ('oe_app_probe', 'probe')"
                     )
                 )
+            finally:
+                trans.rollback()
+
+    def test_app_cannot_modify_alembic_version(self) -> None:
+        with self.engine.connect() as conn:
+            trans = conn.begin()
+            try:
+                conn.execute(text(f'SET ROLE "{APP_ROLE}"'))
+                with self.assertRaises(ProgrammingError):
+                    conn.execute(
+                        text(
+                            "UPDATE disclosure_ops.alembic_version "
+                            "SET version_num = version_num"
+                        )
+                    )
             finally:
                 trans.rollback()
 
