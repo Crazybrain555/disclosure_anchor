@@ -44,7 +44,10 @@ class PublicViewContentTests(unittest.TestCase):
                     provider="cninfo",
                     provider_document_id="1225087169",
                     raw_file_hash="sha256:abc",
-                    raw_file_relpath="raw_documents/cninfo/ab/x.pdf",
+                    raw_file_relpath=(
+                        "raw_documents/cninfo/002484/2025/1225087169/"
+                        "sha256_abcdef.pdf"
+                    ),
                 )
             )
             uow.processing_runs.add(

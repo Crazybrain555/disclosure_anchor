@@ -58,11 +58,15 @@ class FileStorePathBuilder:
         self,
         *,
         provider: str,
+        security_code: str,
+        year: int | str,
         provider_document_id: str,
         raw_file_hash: str,
         extension: str = ".pdf",
     ) -> Path:
         provider_part = _safe_component(provider, label="provider")
+        security_part = _safe_component(security_code, label="security_code")
+        year_part = _safe_component(str(year), label="year")
         provider_document_part = _safe_component(
             provider_document_id, label="provider_document_id"
         )
@@ -70,10 +74,20 @@ class FileStorePathBuilder:
         relpath = (
             Path("raw_documents")
             / provider_part
-            / digest[:2]
-            / f"{provider_document_part}_{digest}{_safe_extension(extension)}"
+            / security_part
+            / year_part
+            / provider_document_part
+            / f"sha256_{digest}{_safe_extension(extension)}"
         )
         return _assert_relative(relpath)
+
+    def data_path(self, relpath: Path) -> Path:
+        relpath = _assert_relative(relpath)
+        path = self._settings.disclosure_data_root / "data" / relpath
+        data_root = self._settings.disclosure_data_root / "data"
+        if not _is_relative_to(path, data_root):
+            raise PathSafetyError(f"data path escapes root: {path}")
+        return path
 
     def parser_artifacts_root_relpath(self, *, document_id: str, processing_run_id: str) -> Path:
         relpath = Path("parser_artifacts") / _safe_component(
@@ -110,4 +124,22 @@ class FileStorePathBuilder:
         path = tmp_root / _safe_component(name, label="runtime_tmp_name")
         if not _is_relative_to(path, tmp_root):
             raise PathSafetyError(f"runtime tmp path escapes root: {path}")
+        return path
+
+    def runtime_quarantine_path(
+        self,
+        *,
+        provider: str,
+        provider_document_id: str,
+        name: str,
+    ) -> Path:
+        quarantine_root = self._settings.disclosure_runtime_root / "quarantine"
+        path = (
+            quarantine_root
+            / _safe_component(provider, label="provider")
+            / _safe_component(provider_document_id, label="provider_document_id")
+            / _safe_component(name, label="quarantine_name")
+        )
+        if not _is_relative_to(path, quarantine_root):
+            raise PathSafetyError(f"quarantine path escapes root: {path}")
         return path

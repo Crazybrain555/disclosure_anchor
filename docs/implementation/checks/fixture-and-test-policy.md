@@ -98,16 +98,16 @@ action:
 第 3 节是目标分层，下面是当前仓库的实际落地与入口命令。
 
 ```text
-tests/unit/          已实现  settings / ids / value_objects / PathBuilder / doctor / health / app startup
+tests/unit/          已实现  settings / ids / value_objects / PathBuilder / raw store / doctor / health / app startup
 tests/contract/      已实现  phase00 golden fixture 结构（document_unit 字段、content_hash、order_index、IR↔unit 一致性）
 tests/sample_corpus/ 已实现  tmp/sample_filings manifest 完整性 + 真实 ID/hash 走 PathBuilder
-tests/integration/   已实现  Phase 02 PG schema / views / permissions / repositories / UnitOfWork rollback
+tests/integration/   已实现  Phase 02 PG + Phase 03 register_local_pdf / raw-hash doctor 检查
 ```
 
 入口命令（Makefile）：
 
 ```bash
-make test              # 跑全部分层（当前 54 个；无 DB 环境时 16 个 integration skip）
+make test              # 跑全部分层（当前 64 个；无 DB 环境时 22 个 integration skip）
 make test-unit         # 仅 tests/unit
 make test-contract     # 仅 tests/contract
 make test-data         # 仅 tests/sample_corpus
@@ -148,6 +148,31 @@ missing_fk_indexes=none
 Fresh DB 验证：创建随机临时库、按 bootstrap 前置 schema/grant 建库、从零 `alembic upgrade head` 到
 `0002_harden_ops_permissions`，确认 5 个 public views、`disclosure_app` 无 `alembic_version` 权限、
 FK helper indexes 无缺口，然后删除临时库。
+
+## 8. Phase 03 独立 testing 验证记录
+
+2026-06-29 独立复测覆盖：
+
+```bash
+.venv/bin/python -m compileall -q src tests
+make migrate
+make test-integration                # DB env: 22 tests, OK
+make test                            # DB env: 64 tests, OK
+env -u DISCLOSURE_MIGRATION_DATABASE_URL -u DATABASE_URL -u DISCLOSURE_ADMIN_DATABASE_URL make test
+                                     # no DB env: 64 tests, OK (skipped=22)
+make doctor                          # DB env + AgentSSD runtime paths, raw hash check pass
+git diff --check
+```
+
+Phase 03 新增覆盖：
+
+- raw archive 路径合同和 `FileStorePathBuilder` 唯一路径入口。
+- `RawDocumentStore` atomic tmp/fsync/hard-link 发布、verify、重复写复用、非法输入 quarantine。
+- `register_local_pdf` 写入 raw file、`source_access`、`document`、`outbox_event`。
+- 重复导入同 provider_document_id + hash 复用已有 document。
+- 缺失 / 非 PDF 输入进入 `runtime/quarantine` 且不写 document。
+- 既有 security/company metadata 冲突在 raw 写入前 fail fast。
+- registered raw file 被手工改动后，doctor raw-hash 检查失败。
 
 备注：`make doctor` 当前仍主要覆盖 AgentSSD/runtime/model-cache 基线；Phase 02 的 DB 证明来自
 Alembic、SQL 点检和 integration tests，PG doctor 输出项后续单独补齐。

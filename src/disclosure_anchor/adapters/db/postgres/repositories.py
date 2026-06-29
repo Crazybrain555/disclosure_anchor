@@ -29,6 +29,15 @@ class CompanyRepository:
         row = self._session.get(models.Company, company_id)
         return mappers.company_to_entity(row) if row is not None else None
 
+    def get_by_legal_name(self, legal_name: str) -> Optional[e.Company]:
+        row = (
+            self._session.query(models.Company)
+            .filter(models.Company.legal_name == legal_name)
+            .order_by(models.Company.created_at.desc(), models.Company.company_id.desc())
+            .first()
+        )
+        return mappers.company_to_entity(row) if row is not None else None
+
 
 class SecurityRepository:
     def __init__(self, session: Session) -> None:
@@ -42,6 +51,17 @@ class SecurityRepository:
 
     def get(self, security_id: str) -> Optional[e.Security]:
         row = self._session.get(models.Security, security_id)
+        return mappers.security_to_entity(row) if row is not None else None
+
+    def get_by_code_exchange(self, security_code: str, exchange: str) -> Optional[e.Security]:
+        row = (
+            self._session.query(models.Security)
+            .filter(
+                models.Security.security_code == security_code,
+                models.Security.exchange == exchange,
+            )
+            .one_or_none()
+        )
         return mappers.security_to_entity(row) if row is not None else None
 
 
@@ -102,6 +122,35 @@ class DocumentRepository:
 
     def get(self, document_id: str) -> Optional[e.Document]:
         row = self._session.get(models.Document, document_id)
+        return mappers.document_to_entity(row) if row is not None else None
+
+    def get_by_provider_document_and_hash(
+        self, *, provider: str, provider_document_id: str, raw_file_hash: str
+    ) -> Optional[e.Document]:
+        row = (
+            self._session.query(models.Document)
+            .filter(
+                models.Document.provider == provider,
+                models.Document.provider_document_id == provider_document_id,
+                models.Document.raw_file_hash == raw_file_hash,
+            )
+            .order_by(models.Document.created_at.desc(), models.Document.document_id.desc())
+            .first()
+        )
+        return mappers.document_to_entity(row) if row is not None else None
+
+    def latest_by_provider_document(
+        self, *, provider: str, provider_document_id: str
+    ) -> Optional[e.Document]:
+        row = (
+            self._session.query(models.Document)
+            .filter(
+                models.Document.provider == provider,
+                models.Document.provider_document_id == provider_document_id,
+            )
+            .order_by(models.Document.created_at.desc(), models.Document.document_id.desc())
+            .first()
+        )
         return mappers.document_to_entity(row) if row is not None else None
 
 

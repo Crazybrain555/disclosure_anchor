@@ -29,6 +29,8 @@ class PathBuilderTests(unittest.TestCase):
             paths = [
                 builder.raw_document_relpath(
                     provider="cninfo",
+                    security_code="002484",
+                    year=2025,
                     provider_document_id="1225087169",
                     raw_file_hash=f"sha256:{digest}",
                 ),
@@ -66,11 +68,48 @@ class PathBuilderTests(unittest.TestCase):
             with self.assertRaises(PathSafetyError):
                 builder.raw_document_relpath(
                     provider="../cninfo",
+                    security_code="002484",
+                    year=2025,
+                    provider_document_id="1225087169",
+                    raw_file_hash="sha256:" + "a" * 64,
+                )
+            with self.assertRaises(PathSafetyError):
+                builder.raw_document_relpath(
+                    provider="cninfo",
+                    security_code="../002484",
+                    year=2025,
                     provider_document_id="1225087169",
                     raw_file_hash="sha256:" + "a" * 64,
                 )
             with self.assertRaises(PathSafetyError):
                 builder.runtime_tmp_path("../escape")
+
+    def test_raw_document_relpath_uses_sha256_filename_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            builder = FileStorePathBuilder(_settings(Path(tmp)))
+            digest = "b" * 64
+            relpath = builder.raw_document_relpath(
+                provider="cninfo",
+                security_code="002484",
+                year="2025",
+                provider_document_id="1225087169",
+                raw_file_hash=f"sha256:{digest}",
+            )
+            self.assertEqual(
+                relpath,
+                Path(
+                    "raw_documents/cninfo/002484/2025/1225087169/"
+                    f"sha256_{digest}.pdf"
+                ),
+            )
+            self.assertEqual(
+                builder.data_path(relpath),
+                Path(tmp)
+                / "services"
+                / "disclosure_anchor"
+                / "data"
+                / relpath,
+            )
 
 
 if __name__ == "__main__":

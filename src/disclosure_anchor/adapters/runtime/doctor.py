@@ -7,6 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
+from disclosure_anchor.adapters.db.postgres.connection import create_db_engine
+from disclosure_anchor.adapters.db.postgres.schema import CORE_SCHEMA
+from disclosure_anchor.adapters.storage.path_builder import FileStorePathBuilder
+from disclosure_anchor.adapters.storage.raw_document_store import RawDocumentStore
 from disclosure_anchor.settings import Settings
 
 
@@ -77,7 +84,61 @@ def run_doctor(settings: Settings) -> DoctorReport:
         for name, path in zip(cache_names, settings.model_cache_paths)
     )
 
+    if settings.database_url is not None:
+        try:
+            engine = create_db_engine(settings.database_url.get_secret_value())
+            checks.extend(run_raw_archive_checks(settings, engine))
+        except Exception as exc:
+            checks.append(CheckResult("raw archive db checks", "FAIL", str(exc)))
+
     return DoctorReport(results=tuple(checks))
+
+
+def _registered_raw_documents(engine: Engine) -> list[tuple[str, str, str]]:
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                f"SELECT document_id, raw_file_relpath, raw_file_hash "
+                f"FROM {CORE_SCHEMA}.document "
+                "WHERE raw_file_relpath IS NOT NULL OR raw_file_hash IS NOT NULL"
+            )
+        ).all()
+    return [(str(row[0]), str(row[1]), str(row[2])) for row in rows]
+
+
+def run_raw_archive_checks(settings: Settings, engine: Engine) -> list[CheckResult]:
+    """Verify registered raw files without mutating DB or files."""
+
+    store = RawDocumentStore(FileStorePathBuilder(settings))
+    results: list[CheckResult] = []
+    for document_id, relpath, expected_hash in _registered_raw_documents(engine):
+        if not relpath or not expected_hash:
+            results.append(
+                CheckResult(
+                    name="raw hash",
+                    status="FAIL",
+                    message=f"document_id={document_id} missing relpath/hash",
+                )
+            )
+            continue
+
+        verification = store.verify_raw_document(
+            relpath=Path(relpath), expected_hash=expected_hash
+        )
+        results.append(
+            CheckResult(
+                name="raw hash",
+                status="PASS" if verification.ok else "FAIL",
+                message=(
+                    f"document_id={document_id} relpath={relpath} "
+                    f"message={verification.message}"
+                ),
+            )
+        )
+
+    if not results:
+        results.append(CheckResult("raw hash", "PASS", "no registered raw documents"))
+    return results
 
 
 def render_report(results: Iterable[CheckResult]) -> str:

@@ -20,9 +20,9 @@ created_at: 2026-06-26
 | A08 | DB schema 可迁移且 migration 幂等 | 02 | `make migrate` | pass |
 | A09 | public views 不暴露绝对路径或 private state | 02/06 | contract test | pass |
 | A10 | 只读角色不能读写 private schema | 02 | permission test | pass |
-| A11 | 本地 PDF 可登记成 document + raw hash | 03 | integration test | pending |
-| A12 | raw_documents 只追加不覆盖 | 03 | integration test | pending |
-| A13 | raw hash 与 DB 不一致能被 doctor 发现 | 03 | doctor test | pending |
+| A11 | 本地 PDF 可登记成 document + raw hash | 03 | integration test | pass |
+| A12 | raw_documents 只追加不覆盖 | 03 | integration test | pass |
+| A13 | raw hash 与 DB 不一致能被 doctor 发现 | 03 | doctor test | pass |
 | A14 | MinerU output 不被 domain 直接读取 | 04 | code review | pending |
 | A15 | parsing failed 不影响旧 active run | 04/05 | integration test | pending |
 | A16 | 年报经营分析 text unit 可查询 | 05/06 | fixture/API test | pending |

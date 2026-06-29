@@ -86,7 +86,10 @@ class RepositoryUnitOfWorkTests(unittest.TestCase):
                         title="2025 年年度报告",
                         filing_type="annual_report",
                         report_period="2025A",
-                        raw_file_relpath="raw_documents/cninfo/7c/1225087169_7c73.pdf",
+                        raw_file_relpath=(
+                            "raw_documents/cninfo/002484/2025/1225087169/"
+                            "sha256_7c73.pdf"
+                        ),
                         raw_file_hash="sha256:7c73103aa3c9",
                     )
                 )

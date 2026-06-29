@@ -17,3 +17,15 @@ class PathSafetyError(DisclosureAnchorError, ValueError):
 
 class MissingDependencyError(DisclosureAnchorError):
     """Raised when an optional runtime dependency is not installed."""
+
+
+class RawDocumentError(DisclosureAnchorError):
+    """Raised when raw document storage fails."""
+
+
+class InvalidRawDocumentError(RawDocumentError):
+    """Raised when an input cannot become an immutable raw document."""
+
+
+class RegistrationMetadataError(DisclosureAnchorError):
+    """Raised when registration metadata conflicts with existing records."""

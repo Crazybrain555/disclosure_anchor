@@ -90,6 +90,8 @@ class SampleFilingsPathBuilderTests(unittest.TestCase):
             sha = entry["sha256"]
             relpath = self.builder.raw_document_relpath(
                 provider=PROVIDER,
+                security_code=entry["seccode"],
+                year=entry["announcement_date"][:4],
                 provider_document_id=textid,
                 raw_file_hash=f"sha256:{sha}",
             )
@@ -97,8 +99,10 @@ class SampleFilingsPathBuilderTests(unittest.TestCase):
             self.assertNotIn("..", relpath.parts)
             self.assertEqual(relpath.parts[0], "raw_documents")
             self.assertEqual(relpath.parts[1], PROVIDER)
-            self.assertEqual(relpath.parts[2], sha[:2])
-            self.assertEqual(relpath.name, f"{textid}_{sha}.pdf")
+            self.assertEqual(relpath.parts[2], entry["seccode"])
+            self.assertEqual(relpath.parts[3], entry["announcement_date"][:4])
+            self.assertEqual(relpath.parts[4], textid)
+            self.assertEqual(relpath.name, f"sha256_{sha}.pdf")
 
             # Distinct documents must not collide on the same relpath.
             if relpath in seen and seen[relpath] != textid:
@@ -109,6 +113,8 @@ class SampleFilingsPathBuilderTests(unittest.TestCase):
         entry = self.entries[0]
         kwargs = dict(
             provider=PROVIDER,
+            security_code=entry["seccode"],
+            year=entry["announcement_date"][:4],
             provider_document_id=entry["cninfo_textid"],
             raw_file_hash=f"sha256:{entry['sha256']}",
         )
