@@ -51,7 +51,27 @@ class FileStorePathPort(Protocol):
     def parser_artifacts_root_relpath(self, *, document_id: str, processing_run_id: str) -> Path:
         ...
 
+    def parser_run_artifacts_relpath(
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
+    ) -> Path:
+        ...
+
     def normalized_ir_relpath(self, *, document_id: str, processing_run_id: str) -> Path:
+        ...
+
+    def normalized_ir_run_relpath(
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
+    ) -> Path:
         ...
 
     def document_units_snapshot_relpath(

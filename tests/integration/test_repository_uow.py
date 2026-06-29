@@ -104,6 +104,16 @@ class RepositoryUnitOfWorkTests(unittest.TestCase):
                         is_active=True,
                         parser_name="mineru",
                         parser_version="3.4.0",
+                        parser_backend="pipeline",
+                        input_raw_file_hash="sha256:7c73103aa3c9",
+                        parser_artifact_relpath=(
+                            "parser_artifacts/cninfo/002484/1225087169/"
+                            "run_01K0000000000000000000000"
+                        ),
+                        normalized_ir_relpath=(
+                            "derived/normalized_ir/cninfo/002484/1225087169/"
+                            "run_01K0000000000000000000000/normalized_ir.v1.json"
+                        ),
                     )
                 )
                 created["run"] = run.processing_run_id
@@ -143,6 +153,10 @@ class RepositoryUnitOfWorkTests(unittest.TestCase):
                 self.assertEqual(uow.companies.get(created["company"]).legal_name, "江海股份")
                 self.assertEqual(uow.documents.get(created["document"]).report_period, "2025A")
                 got_unit = uow.document_units.get(created["unit"])
+                got_run = uow.processing_runs.get(created["run"])
+                self.assertEqual(got_run.parser_backend, "pipeline")
+                self.assertEqual(got_run.input_raw_file_hash, "sha256:7c73103aa3c9")
+                self.assertTrue(got_run.parser_artifact_relpath.startswith("parser_artifacts/"))
                 self.assertEqual(got_unit.semantic_key, "receivable_aging")
                 self.assertEqual(got_unit.heading_path[0], "第八节 财务报告")
                 self.assertEqual(uow.outbox.get(created["event"]).event_type, "run_published")

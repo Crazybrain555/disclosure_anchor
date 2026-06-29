@@ -111,6 +111,36 @@ class PathBuilderTests(unittest.TestCase):
                 / relpath,
             )
 
+    def test_phase04_parser_and_normalized_ir_run_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            builder = FileStorePathBuilder(_settings(Path(tmp)))
+            artifact_relpath = builder.parser_run_artifacts_relpath(
+                provider="cninfo",
+                security_code="002484",
+                provider_document_id="1225087169",
+                processing_run_id="run_01K0000000000000000000000",
+            )
+            normalized_relpath = builder.normalized_ir_run_relpath(
+                provider="cninfo",
+                security_code="002484",
+                provider_document_id="1225087169",
+                processing_run_id="run_01K0000000000000000000000",
+            )
+            self.assertEqual(
+                artifact_relpath,
+                Path(
+                    "parser_artifacts/cninfo/002484/1225087169/"
+                    "run_01K0000000000000000000000"
+                ),
+            )
+            self.assertEqual(
+                normalized_relpath,
+                Path(
+                    "derived/normalized_ir/cninfo/002484/1225087169/"
+                    "run_01K0000000000000000000000/normalized_ir.v1.json"
+                ),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -124,6 +124,32 @@ class DocumentRepository:
         row = self._session.get(models.Document, document_id)
         return mappers.document_to_entity(row) if row is not None else None
 
+    def update(self, document: e.Document) -> e.Document:
+        row = self._session.get(models.Document, document.document_id)
+        if row is None:
+            raise KeyError(f"document not found: {document.document_id}")
+        updated = mappers.document_to_model(document)
+        for column in (
+            "company_id",
+            "security_id",
+            "source_access_id",
+            "provider",
+            "provider_document_id",
+            "title",
+            "filing_type",
+            "announcement_date",
+            "report_period",
+            "raw_file_relpath",
+            "raw_file_hash",
+            "status",
+            "current_processing_run_id",
+            "supersedes_document_id",
+            "correction_of_document_id",
+        ):
+            setattr(row, column, getattr(updated, column))
+        self._session.flush()
+        return mappers.document_to_entity(row)
+
     def get_by_provider_document_and_hash(
         self, *, provider: str, provider_document_id: str, raw_file_hash: str
     ) -> Optional[e.Document]:
@@ -167,6 +193,34 @@ class ProcessingRunRepository:
     def get(self, processing_run_id: str) -> Optional[e.ProcessingRun]:
         row = self._session.get(models.ProcessingRun, processing_run_id)
         return mappers.processing_run_to_entity(row) if row is not None else None
+
+    def update(self, run: e.ProcessingRun) -> e.ProcessingRun:
+        row = self._session.get(models.ProcessingRun, run.processing_run_id)
+        if row is None:
+            raise KeyError(f"processing_run not found: {run.processing_run_id}")
+        updated = mappers.processing_run_to_model(run)
+        for column in (
+            "document_id",
+            "run_kind",
+            "status",
+            "parser_name",
+            "parser_version",
+            "parser_backend",
+            "input_raw_file_hash",
+            "parser_artifact_relpath",
+            "artifact_hash",
+            "normalized_ir_relpath",
+            "document_units_relpath",
+            "content_hash_aggregate",
+            "structure_hash",
+            "is_active",
+            "started_at",
+            "finished_at",
+            "error",
+        ):
+            setattr(row, column, getattr(updated, column))
+        self._session.flush()
+        return mappers.processing_run_to_entity(row)
 
 
 class DocumentUnitRepository:

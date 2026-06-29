@@ -101,6 +101,9 @@ class ProcessingRun:
     status: str
     parser_name: Optional[str] = None
     parser_version: Optional[str] = None
+    parser_backend: Optional[str] = None
+    input_raw_file_hash: Optional[str] = None
+    parser_artifact_relpath: Optional[str] = None
     artifact_hash: Optional[str] = None
     normalized_ir_relpath: Optional[str] = None
     document_units_relpath: Optional[str] = None

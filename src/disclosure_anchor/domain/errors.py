@@ -29,3 +29,11 @@ class InvalidRawDocumentError(RawDocumentError):
 
 class RegistrationMetadataError(DisclosureAnchorError):
     """Raised when registration metadata conflicts with existing records."""
+
+
+class ParserError(DisclosureAnchorError):
+    """Raised when parser execution or artifact mapping fails."""
+
+
+class ParseDocumentError(DisclosureAnchorError):
+    """Raised when a document cannot be parsed under the current contract."""

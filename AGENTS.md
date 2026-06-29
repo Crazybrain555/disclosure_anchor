@@ -38,6 +38,10 @@ Before marking work complete, run or record the exact blocker for relevant check
 - Harness/policy changes: parse TOML/JSON when relevant and run router/review consistency checks across `AGENTS.md` and `docs/agent/*`.
 - Setup/dependency/doc command changes: verify the documented command or record why the local environment cannot run it.
 - Runtime code changes: run the relevant compile/help/tests only for runtime code that actually exists in the checkout.
+- Realism check: for milestones touching disclosure files, parser outputs, raw/archive storage, DB publication,
+  APIs, or worker state, validation should use representative local samples when available; synthetic-only
+  validation is insufficient unless the blocker/exception is recorded. See
+  `docs/implementation/checks/fixture-and-test-policy.md`.
 
 ### Independent-review trigger
 

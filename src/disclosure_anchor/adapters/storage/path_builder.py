@@ -95,11 +95,47 @@ class FileStorePathBuilder:
         ) / _safe_component(processing_run_id, label="processing_run_id")
         return _assert_relative(relpath)
 
+    def parser_run_artifacts_relpath(
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
+    ) -> Path:
+        relpath = (
+            Path("parser_artifacts")
+            / _safe_component(provider, label="provider")
+            / _safe_component(security_code, label="security_code")
+            / _safe_component(provider_document_id, label="provider_document_id")
+            / _safe_component(processing_run_id, label="processing_run_id")
+        )
+        return _assert_relative(relpath)
+
     def normalized_ir_relpath(self, *, document_id: str, processing_run_id: str) -> Path:
         relpath = (
             Path("derived")
             / "normalized_ir"
             / _safe_component(document_id, label="document_id")
+            / _safe_component(processing_run_id, label="processing_run_id")
+            / "normalized_ir.v1.json"
+        )
+        return _assert_relative(relpath)
+
+    def normalized_ir_run_relpath(
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
+    ) -> Path:
+        relpath = (
+            Path("derived")
+            / "normalized_ir"
+            / _safe_component(provider, label="provider")
+            / _safe_component(security_code, label="security_code")
+            / _safe_component(provider_document_id, label="provider_document_id")
             / _safe_component(processing_run_id, label="processing_run_id")
             / "normalized_ir.v1.json"
         )

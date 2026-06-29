@@ -81,7 +81,7 @@ class SchemaShapeTests(unittest.TestCase):
                 text(f"SELECT version_num FROM {ALEMBIC_VERSION_TABLE_SCHEMA}.alembic_version")
             ).scalar()
         self.assertEqual(schema, ALEMBIC_VERSION_TABLE_SCHEMA)
-        self.assertEqual(version, "0002_harden_ops_permissions")
+        self.assertEqual(version, "0003_parser_run_metadata")
 
     def test_public_views_do_not_expose_relpath_columns(self) -> None:
         with self.engine.connect() as conn:

@@ -2,11 +2,21 @@
 id: disclosure_anchor_milestone_04_mineru-adapter-and-normalized-ir
 project: disclosure_anchor
 title: MinerU adapter 与 NormalizedIR
-status: ready-for-implementation
+status: complete
 created_at: 2026-06-26
+implemented_at: 2026-06-29
+verified_at: 2026-06-29
 ---
 
 # Milestone 04: MinerU adapter 与 NormalizedIR
+
+> 实施状态（2026-06-29）：已实现并完成本地验证。新增 parser-neutral
+> `DocumentParserPort`/`ParserResult`/`ParserOptions`，`MinerUProcess` CLI wrapper，
+> `MinerUArtifactReader`，`MinerUToNormalizedIRMapper`，`MinerUDocumentParser`，以及
+> `ParseDocument` use case。`processing_run` 通过 `0003_parser_run_metadata` 增加
+> `parser_backend` / `input_raw_file_hash` / `parser_artifact_relpath`，同时保持 public view 不暴露
+> relpath。真实短公告 PDF 已通过实际 MinerU smoke：登记 raw PDF、调用 MinerU、生成 parser artifacts 和
+> `normalized_ir.v1.json`，31 个元素，run 状态 `succeeded`。A14-A15 pass。
 
 ## 1. 目标
 
@@ -87,6 +97,55 @@ data/derived/normalized_ir/<provider>/<security>/<provider_doc_id>/run_<run_id>/
 - parser_artifacts。
 - normalized_ir artifact。
 - processing_run parse 状态。
+
+
+## 9. 独立 testing 验证
+
+验证环境：
+
+```text
+PostgreSQL 18 / AgentSSD pg18-main
+socket: /Volumes/AgentSSD/agent_system/postgres/sockets
+port: 55432
+MinerU: /Volumes/AgentSSD/agent_system/services/disclosure_anchor/runtime/venvs/mineru-phase00/bin/mineru
+```
+
+命令验证：
+
+```text
+.venv/bin/python -m compileall -q src tests        pass
+make test-unit                                    38 tests, OK
+make test-contract                                6 tests, OK
+make test                                         no DB env: 73 tests, OK (skipped=24)
+make migrate                                      pass, head=0003_parser_run_metadata
+make test-integration                             24 tests, OK
+make test                                         DB env: 73 tests, OK
+make doctor                                       pass
+git diff --check                                  pass
+```
+
+SQL 点检：
+
+```text
+alembic=0003_parser_run_metadata
+processing_run Phase 04 cols=3
+public relpath cols=0
+processing_runs_v1 parser metadata cols=2
+```
+
+真实样本 smoke：
+
+- 输入真实 PDF：`tmp/sample_filings/002484_江海股份/...1225376481.pdf`，约 102KB。
+- 使用临时 data/runtime root 和临时 DB 记录，执行 `register_local_pdf` + `ParseDocument` + 实际 MinerU CLI。
+- 结果：`processing_run.status=succeeded`，生成 parser artifact relpath、`normalized_ir.v1.json`，元素数 31，
+  `kinds=text`。
+- 测试结束后清理临时 DB 记录和临时 data root。
+
+覆盖：
+
+- A14：domain/application 不直接读取 MinerU raw JSON；application 只依赖 parser port，MinerU raw reader/mapper
+  位于 adapter 层。
+- A15：parser failure 会写入新的 failed parse run，既有 active run 保持 `succeeded/is_active=true`。
 
 
 ## 8. 常见失败与处理

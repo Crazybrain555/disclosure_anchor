@@ -20,6 +20,26 @@ short_announcement.pdf   短公告，验证少量事项型 text/table
 
 样本用于 fixture 和人工复核，不用于覆盖全市场质量。
 
+## 1.1 真实场景优先原则
+
+测试应尽可能模拟真实使用场景。对会处理披露文件、文件系统归档、解析产物、数据库发布、API
+查询或 worker 状态流转的里程碑，完成验证不能只依赖 synthetic/minimal payload；只要本地存在代表性样本，
+就必须至少补一条真实样本 smoke/integration/fixture 验证。
+
+执行规则：
+
+- 优先使用本地真实披露样本，例如 `tmp/sample_filings/` 里的 CNINFO PDF，或
+  `tests/fixtures/phase00/` 中由真实 PDF 生成的 golden 输出。
+- 真实样本验证应尽量保留真实文件大小、文件名、证券代码、provider_document_id、日期、hash、目录结构和
+  DB/runtime 路径行为；不得为了测试方便改成只覆盖 toy path 或 toy metadata。
+- synthetic 测试仍然需要保留，用于纯函数/unit 逻辑、边界条件、失败注入、权限错误、不可读文件、hash
+  mismatch、无 DB 环境 skip 等难以稳定复现的分支。
+- 当某个 acceptance item 面向真实业务输入时，synthetic 测试只能证明局部机制，不能单独作为完成证明。
+- 如果本地没有合适真实样本，或真实样本验证需要外部网络/凭据/长耗时资源，必须在 `Status.md` 或
+  `Plan.md` 的 validation 记录中写明例外原因、替代验证和后续补齐条件。
+- 真实样本 smoke/integration 测试应使用临时 data/runtime root、随机 provider_document_id 或可清理测试
+  database 记录，避免污染持久样本库和生产式 raw archive。
+
 ## 2. Fixture 输出
 
 每个样本至少保存：
@@ -173,6 +193,41 @@ Phase 03 新增覆盖：
 - 缺失 / 非 PDF 输入进入 `runtime/quarantine` 且不写 document。
 - 既有 security/company metadata 冲突在 raw 写入前 fail fast。
 - registered raw file 被手工改动后，doctor raw-hash 检查失败。
+- 真实 CNINFO PDF smoke test：用 `tmp/sample_filings/002484_江海股份/...1225087169.pdf`
+  （约 5.48MB 年报）执行 `register_local_pdf`，验证 raw archive 落盘、重复登记复用、doctor raw-hash
+  PASS；测试结束后清理临时 DB 记录和临时 data root。
 
 备注：`make doctor` 当前仍主要覆盖 AgentSSD/runtime/model-cache 基线；Phase 02 的 DB 证明来自
 Alembic、SQL 点检和 integration tests，PG doctor 输出项后续单独补齐。
+
+## 9. Phase 04 独立 testing 验证记录
+
+2026-06-29 独立复测覆盖：
+
+```bash
+.venv/bin/python -m compileall -q src tests
+make test-unit                    # 38 tests, OK
+make test-contract                # 6 tests, OK
+make test                         # no DB env: 73 tests, OK (skipped=24)
+make migrate                      # head=0003_parser_run_metadata
+make test-integration             # DB env: 24 tests, OK
+make test                         # DB env: 73 tests, OK
+make doctor                       # DB env + AgentSSD runtime paths, pass
+git diff --check
+```
+
+真实场景验证：
+
+- 使用 `tmp/sample_filings/002484_江海股份/...1225376481.pdf` 真实短公告 PDF（约 102KB）。
+- 通过 Phase 03 `register_local_pdf` 登记 raw PDF，再通过 Phase 04 `ParseDocument` 调用实际 MinerU CLI。
+- 生成 parser artifacts、`normalized_ir.v1.json` 和 `processing_run.status=succeeded`；NormalizedIR 元素数
+  31。
+- 测试使用临时 data/runtime root 和临时 DB 记录，结束后清理。
+
+Phase 04 新增覆盖：
+
+- `DocumentParserPort` / `ParserOptions` / `ParserResult` parser-neutral port。
+- `MinerUProcess` CLI wrapper、`MinerUArtifactReader`、`MinerUToNormalizedIRMapper`、`MinerUDocumentParser`。
+- Phase 04 parser artifact 与 NormalizedIR relpath 合同。
+- `ParseDocument` success/failure run 状态，失败时不影响既有 active run。
+- `0003_parser_run_metadata` migration 与 public view 不暴露 relpath 的 SQL 点检。
