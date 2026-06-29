@@ -2,11 +2,17 @@
 id: disclosure_anchor_milestone_02_postgres-and-migrations
 project: disclosure_anchor
 title: PostgreSQL 与 migrations
-status: ready-for-implementation
+status: implemented
 created_at: 2026-06-26
+implemented_at: 2026-06-29
 ---
 
 # Milestone 02: PostgreSQL 与 migrations
+
+> 实施状态（2026-06-29）：已完成并在本地 PG18 AgentSSD 集群验证。`make db-create` / `make migrate` 幂等；
+> `disclosure_core` / `disclosure_public` / `disclosure_ops` 三个 schema、九张核心表、五个 public view、
+> 四个角色及最小权限、单 active run 偏唯一索引均已建立；repository / UnitOfWork 与 15 个集成测试通过
+> （无 DB 环境时干净跳过）。A08-A10 标记为 pass。独立 review gate 待运行。
 
 ## 1. 目标
 

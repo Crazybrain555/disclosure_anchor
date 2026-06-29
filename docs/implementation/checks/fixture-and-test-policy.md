@@ -92,3 +92,30 @@ issues:
 action:
   pass / needs_rule_adjustment / parser_unusable
 ```
+
+## 6. 测试落地（目录与命令）
+
+第 3 节是目标分层，下面是当前仓库的实际落地与入口命令。
+
+```text
+tests/unit/          已实现  settings / ids / value_objects / PathBuilder / doctor / health / app startup
+tests/contract/      已实现  phase00 golden fixture 结构（document_unit 字段、content_hash、order_index、IR↔unit 一致性）
+tests/sample_corpus/ 已实现  tmp/sample_filings manifest 完整性 + 真实 ID/hash 走 PathBuilder
+tests/integration/   占位     Phase 02+ 填入：PG repositories / UnitOfWork rollback / migrate 幂等 等
+```
+
+入口命令（Makefile）：
+
+```bash
+make test              # 跑全部分层（当前 37 个，绿）
+make test-unit         # 仅 tests/unit
+make test-contract     # 仅 tests/contract
+make test-data         # 仅 tests/sample_corpus
+make test-integration  # 仅 tests/integration（Phase 01 为空）
+```
+
+约定：
+
+- `make test` 是**唯一权威入口**；VSCode Testing 已配置发现根为 `./tests`（`.vscode/settings.json`），三层都会出现在 Test Explorer。
+- 依赖外部资源的测试（`tests/sample_corpus` 需要 `tmp/sample_filings`，`tests/integration` 需要本地 PG/runtime）在资源缺失时必须 **skip**，保证无外部依赖的环境仍全绿。
+- `tmp/sample_filings` 与大型 parser artifact 是 git-ignored 的本地 fixture，不入库；只有 `tests/fixtures/phase00/` 的小型 golden 输出入库。

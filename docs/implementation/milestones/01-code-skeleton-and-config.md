@@ -2,7 +2,7 @@
 id: disclosure_anchor_milestone_01_code-skeleton-and-config
 project: disclosure_anchor
 title: 代码骨架与配置
-status: ready-for-implementation
+status: complete
 created_at: 2026-06-26
 ---
 
@@ -122,3 +122,27 @@ make api
 - 配置读取混乱：优先修 settings，不让 use case 读取环境变量。
 - 路径手写扩散：立即收敛到 `FileStorePathBuilder`。
 - doctor 误创建内置盘目录：视为严重错误，修正 fail closed。
+
+
+## 9. Phase 01 实施记录
+
+2026-06-29 已实现 Phase 01 骨架：
+
+- 新增 `pyproject.toml`、`Makefile`、`.env.example`、`config/`、`contracts/`、`src/disclosure_anchor/`
+  和 `tests/unit/`。
+- `settings.py` 只从环境变量读取 `DISCLOSURE_*`、`DATABASE_URL`、模型缓存和 CNINFO 凭据字段。
+- `FileStorePathBuilder` 集中生成 raw/parser/normalized_ir/document_units 相对路径和受控 runtime tmp 路径。
+- `doctor` 检查 AgentSSD agent_system root、sentinel、data/shared/runtime 可写性和模型缓存归属；不自动创建或修复目录。
+- `make api` 使用 uvicorn app factory，启动时运行 settings + doctor preflight，缺失外置盘/环境时 fail closed。
+- `/v1/health` 返回 `{"status":"ok","service":"disclosure_anchor","version":"0.1.0"}`。
+- 单元测试覆盖 settings、PathBuilder、ids、doctor、app startup 和 health payload。
+
+已验证：
+
+- `make test-unit` 通过（14 tests）。
+- `make doctor` 在真实 AgentSSD 环境变量下通过；沙盒内因外置盘写权限边界会失败，已用 real filesystem check 复核。
+- `make api` 无运行环境变量时拒绝启动；带真实 AgentSSD 环境变量时可启动，`GET /v1/health` 返回 ok。
+- `src/`、`tests/unit/`、`Makefile`、`pyproject.toml`、`config/`、`contracts/`、`README.md` 无
+  `/Volumes/AgentSSD` 硬编码；只有 `.env.example` 保留示例路径。
+- Phase 01 文件未匹配真实 `DATABASE_URL` 密码或 CNINFO 凭据模式。
+- 独立 reviewer gate 通过：no material findings，overall verdict pass，confidence high。

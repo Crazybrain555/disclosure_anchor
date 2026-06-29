@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.disclosure-anchor/contracts/normalized_ir.v1.json",
+  "title": "NormalizedIR v1",
+  "type": "object",
+  "description": "Phase 01 placeholder for the parser-neutral IR contract. Phase 04 owns the full schema."
+}

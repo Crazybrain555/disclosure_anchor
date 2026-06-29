@@ -1,0 +1,77 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from disclosure_anchor.adapters.storage.path_builder import FileStorePathBuilder
+from disclosure_anchor.domain.errors import PathSafetyError
+from disclosure_anchor.settings import Settings
+
+
+def _settings(root: Path) -> Settings:
+    data_root = root / "services" / "disclosure_anchor"
+    shared_root = root / "shared"
+    return Settings(
+        disclosure_data_root=data_root,
+        disclosure_shared_root=shared_root,
+        disclosure_runtime_root=data_root / "runtime",
+        mineru_model_cache=shared_root / "model_cache" / "mineru",
+        hf_home=shared_root / "model_cache" / "huggingface",
+        modelscope_cache=shared_root / "model_cache" / "modelscope",
+    )
+
+
+class PathBuilderTests(unittest.TestCase):
+    def test_store_paths_are_relative(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            builder = FileStorePathBuilder(_settings(Path(tmp)))
+            digest = "a" * 64
+
+            paths = [
+                builder.raw_document_relpath(
+                    provider="cninfo",
+                    provider_document_id="1225087169",
+                    raw_file_hash=f"sha256:{digest}",
+                ),
+                builder.parser_artifacts_root_relpath(
+                    document_id="doc_01K00000000000000000000000",
+                    processing_run_id="run_01K0000000000000000000000",
+                ),
+                builder.normalized_ir_relpath(
+                    document_id="doc_01K00000000000000000000000",
+                    processing_run_id="run_01K0000000000000000000000",
+                ),
+                builder.document_units_snapshot_relpath(
+                    document_id="doc_01K00000000000000000000000",
+                    processing_run_id="run_01K0000000000000000000000",
+                ),
+            ]
+
+            for path in paths:
+                self.assertFalse(path.is_absolute())
+                self.assertNotIn("..", path.parts)
+
+    def test_runtime_tmp_path_stays_under_runtime_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = _settings(Path(tmp))
+            builder = FileStorePathBuilder(settings)
+            self.assertEqual(builder.runtime_tmp_path(), settings.disclosure_runtime_root / "tmp")
+            self.assertEqual(
+                builder.runtime_tmp_path("probe.json"),
+                settings.disclosure_runtime_root / "tmp" / "probe.json",
+            )
+
+    def test_rejects_unsafe_components(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            builder = FileStorePathBuilder(_settings(Path(tmp)))
+            with self.assertRaises(PathSafetyError):
+                builder.raw_document_relpath(
+                    provider="../cninfo",
+                    provider_document_id="1225087169",
+                    raw_file_hash="sha256:" + "a" * 64,
+                )
+            with self.assertRaises(PathSafetyError):
+                builder.runtime_tmp_path("../escape")
+
+
+if __name__ == "__main__":
+    unittest.main()

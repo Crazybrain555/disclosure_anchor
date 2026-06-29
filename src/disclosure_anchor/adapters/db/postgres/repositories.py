@@ -1,0 +1,154 @@
+"""SQLAlchemy repository implementations.
+
+Each repository adds domain entities into the active session (mapping them to ORM
+models) and loads them back as entities. They never commit; the UnitOfWork owns
+the transaction boundary.
+"""
+
+from __future__ import annotations
+
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from disclosure_anchor.adapters.db.postgres import mappers, models
+from disclosure_anchor.domain import entities as e
+
+
+class CompanyRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, company: e.Company) -> e.Company:
+        row = mappers.company_to_model(company)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.company_to_entity(row)
+
+    def get(self, company_id: str) -> Optional[e.Company]:
+        row = self._session.get(models.Company, company_id)
+        return mappers.company_to_entity(row) if row is not None else None
+
+
+class SecurityRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, security: e.Security) -> e.Security:
+        row = mappers.security_to_model(security)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.security_to_entity(row)
+
+    def get(self, security_id: str) -> Optional[e.Security]:
+        row = self._session.get(models.Security, security_id)
+        return mappers.security_to_entity(row) if row is not None else None
+
+
+class TrackedCompanyRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, tracked_company: e.TrackedCompany) -> e.TrackedCompany:
+        row = mappers.tracked_company_to_model(tracked_company)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.tracked_company_to_entity(row)
+
+    def get(self, tracked_company_id: str) -> Optional[e.TrackedCompany]:
+        row = self._session.get(models.TrackedCompany, tracked_company_id)
+        return mappers.tracked_company_to_entity(row) if row is not None else None
+
+
+class SourceAccessRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, source_access: e.SourceAccess) -> e.SourceAccess:
+        row = mappers.source_access_to_model(source_access)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.source_access_to_entity(row)
+
+    def get(self, source_access_id: str) -> Optional[e.SourceAccess]:
+        row = self._session.get(models.SourceAccess, source_access_id)
+        return mappers.source_access_to_entity(row) if row is not None else None
+
+
+class SourceCheckpointRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, checkpoint: e.SourceCheckpoint) -> e.SourceCheckpoint:
+        row = mappers.source_checkpoint_to_model(checkpoint)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.source_checkpoint_to_entity(row)
+
+    def get(self, source_checkpoint_id: str) -> Optional[e.SourceCheckpoint]:
+        row = self._session.get(models.SourceCheckpoint, source_checkpoint_id)
+        return mappers.source_checkpoint_to_entity(row) if row is not None else None
+
+
+class DocumentRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, document: e.Document) -> e.Document:
+        row = mappers.document_to_model(document)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.document_to_entity(row)
+
+    def get(self, document_id: str) -> Optional[e.Document]:
+        row = self._session.get(models.Document, document_id)
+        return mappers.document_to_entity(row) if row is not None else None
+
+
+class ProcessingRunRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, run: e.ProcessingRun) -> e.ProcessingRun:
+        row = mappers.processing_run_to_model(run)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.processing_run_to_entity(row)
+
+    def get(self, processing_run_id: str) -> Optional[e.ProcessingRun]:
+        row = self._session.get(models.ProcessingRun, processing_run_id)
+        return mappers.processing_run_to_entity(row) if row is not None else None
+
+
+class DocumentUnitRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, unit: e.DocumentUnit) -> e.DocumentUnit:
+        row = mappers.document_unit_to_model(unit)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.document_unit_to_entity(row)
+
+    def get(self, document_unit_id: str) -> Optional[e.DocumentUnit]:
+        row = self._session.get(models.DocumentUnit, document_unit_id)
+        return mappers.document_unit_to_entity(row) if row is not None else None
+
+
+class OutboxRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def add(self, event: e.OutboxEvent) -> e.OutboxEvent:
+        row = mappers.outbox_event_to_model(event)
+        self._session.add(row)
+        self._session.flush()
+        return mappers.outbox_event_to_entity(row)
+
+    def get(self, event_id: str) -> Optional[e.OutboxEvent]:
+        row = (
+            self._session.query(models.OutboxEvent)
+            .filter(models.OutboxEvent.event_id == event_id)
+            .one_or_none()
+        )
+        return mappers.outbox_event_to_entity(row) if row is not None else None
