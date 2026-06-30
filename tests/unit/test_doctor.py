@@ -33,6 +33,10 @@ class DoctorTests(unittest.TestCase):
             _create_roots(root)
             report = run_doctor(_settings(root))
             self.assertTrue(report.ok, report.results)
+            self.assertIn(
+                "raw archive filesystem",
+                [result.name for result in report.results],
+            )
 
     def test_fails_closed_when_sentinel_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

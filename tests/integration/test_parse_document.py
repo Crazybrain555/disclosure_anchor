@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import text
 
 from disclosure_anchor.adapters.db.postgres.unit_of_work import SqlAlchemyUnitOfWork
+from disclosure_anchor.adapters.storage.artifact_store import ArtifactStore
 from disclosure_anchor.adapters.storage.path_builder import FileStorePathBuilder
 from disclosure_anchor.adapters.storage.raw_document_store import RawDocumentStore
 from disclosure_anchor.application.ports.parser import ParserOptions, ParserResult
@@ -106,6 +107,15 @@ class FailingParser:
         raise ParserError("parser failed for test")
 
 
+class TrackingParser(FakeParser):
+    def __init__(self) -> None:
+        self.called = False
+
+    def parse(self, **kwargs: Any) -> ParserResult:
+        self.called = True
+        return super().parse(**kwargs)
+
+
 class ParseDocumentTests(unittest.TestCase):
     def setUp(self) -> None:
         self.engine = engine_or_skip()
@@ -114,6 +124,7 @@ class ParseDocumentTests(unittest.TestCase):
         self.settings = _settings(self.root)
         self.paths = FileStorePathBuilder(self.settings)
         self.raw_store = RawDocumentStore(self.paths)
+        self.artifact_store = ArtifactStore(self.paths)
         self.provider_document_ids: list[str] = []
 
     def tearDown(self) -> None:
@@ -207,6 +218,8 @@ class ParseDocumentTests(unittest.TestCase):
         use_case = ParseDocument(
             parser=FakeParser(),
             path_builder=self.paths,
+            raw_store=self.raw_store,
+            artifact_store=self.artifact_store,
             uow_factory=lambda: SqlAlchemyUnitOfWork(engine=self.engine),
         )
 
@@ -259,6 +272,8 @@ class ParseDocumentTests(unittest.TestCase):
         use_case = ParseDocument(
             parser=FailingParser(),
             path_builder=self.paths,
+            raw_store=self.raw_store,
+            artifact_store=self.artifact_store,
             uow_factory=lambda: SqlAlchemyUnitOfWork(engine=self.engine),
         )
         result = use_case.execute(ParseDocumentCommand(document_id=document_id))
@@ -284,6 +299,30 @@ class ParseDocumentTests(unittest.TestCase):
         self.assertTrue(active_status.is_active)
         self.assertEqual(failed_status.status, "failed")
         self.assertFalse(failed_status.is_active)
+
+    def test_raw_hash_mismatch_fails_before_parser_is_called(self) -> None:
+        document_id = self._register_document()
+        with SqlAlchemyUnitOfWork(engine=self.engine) as uow:
+            document = uow.documents.get(document_id)
+            self.assertIsNotNone(document)
+
+        assert document is not None
+        raw_path = self.settings.disclosure_data_root / "data" / document.raw_file_relpath
+        raw_path.write_bytes(b"%PDF-1.4\ntampered raw bytes\n%%EOF\n")
+        parser = TrackingParser()
+        use_case = ParseDocument(
+            parser=parser,
+            path_builder=self.paths,
+            raw_store=self.raw_store,
+            artifact_store=self.artifact_store,
+            uow_factory=lambda: SqlAlchemyUnitOfWork(engine=self.engine),
+        )
+
+        result = use_case.execute(ParseDocumentCommand(document_id=document_id))
+
+        self.assertEqual(result.status, "failed")
+        self.assertFalse(parser.called)
+        self.assertIn("raw_hash_mismatch", result.error)
 
 
 if __name__ == "__main__":

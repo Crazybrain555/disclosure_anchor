@@ -81,7 +81,20 @@ class SchemaShapeTests(unittest.TestCase):
                 text(f"SELECT version_num FROM {ALEMBIC_VERSION_TABLE_SCHEMA}.alembic_version")
             ).scalar()
         self.assertEqual(schema, ALEMBIC_VERSION_TABLE_SCHEMA)
-        self.assertEqual(version, "0003_parser_run_metadata")
+        self.assertEqual(version, "0004_review_hardening_contracts")
+
+    def test_document_provider_hash_unique_index_exists(self) -> None:
+        with self.engine.connect() as conn:
+            present = conn.execute(
+                text(
+                    "SELECT 1 FROM pg_indexes "
+                    "WHERE schemaname = :schema "
+                    "AND indexname = 'uq_document_provider_doc_hash' "
+                    "AND indexdef LIKE '%UNIQUE%'"
+                ),
+                {"schema": CORE_SCHEMA},
+            ).scalar()
+        self.assertEqual(present, 1)
 
     def test_public_views_do_not_expose_relpath_columns(self) -> None:
         with self.engine.connect() as conn:

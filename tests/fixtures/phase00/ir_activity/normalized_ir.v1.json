@@ -1,32 +1,10 @@
 {
-  "contract_version": "normalized_ir.v1.phase00-draft",
+  "contract_version": "normalized_ir.v1",
   "created_at": "2026-06-26T14:20:50.414801+00:00",
-  "sample_key": "ir_activity",
-  "sample_role": "ir_activity.pdf",
   "document_id": "phase00_ir_activity",
-  "title": "美的集团：2025年4月11日投资者关系活动记录表",
-  "source_pdf": "tmp/sample_filings/000333_美的集团/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887.pdf",
-  "parser": {
-    "name": "MinerU",
-    "package_version": "3.4.0",
-    "backend": "pipeline",
-    "method": "auto",
-    "language": "ch",
-    "formula": false,
-    "table": true
-  },
-  "parsed_pages": {
-    "start_page_no": 1,
-    "end_page_no": 24,
-    "full_pdf": true
-  },
-  "parser_artifacts": {
-    "content_list": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887_content_list.json",
-    "markdown": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887.md",
-    "root": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto"
-  },
   "elements": [
     {
+      "image_path": "images/be35db9ee1c724586b5a9f43fc10776d3a4bb94ecb41d19ce38cf895160d4ef8.jpg",
       "ir_id": "ir_activity_ir_0000",
       "kind": "table",
       "order_index": 0,
@@ -36,8 +14,7 @@
         "编号：2025-2"
       ],
       "table_footnote": [],
-      "table_html": "<table><tr><td rowspan=1 colspan=1>投资者关系活动类别</td><td rowspan=1 colspan=1>□特定对象调研             □分析师会议□媒体采访                    业绩说明会□新闻发布会                □路演活动□现场参观□其他</td></tr><tr><td rowspan=1 colspan=1>参与单位名称</td><td rowspan=1 colspan=1>线上参与公司2024年度业绩说明会的投资者</td></tr><tr><td rowspan=1 colspan=1>时间</td><td rowspan=1 colspan=1>2025年4月11日</td></tr><tr><td rowspan=1 colspan=1>地点</td><td rowspan=1 colspan=1>公司</td></tr><tr><td rowspan=1 colspan=1>上市公司接待人员姓名</td><td rowspan=1 colspan=1>董事长兼总裁方洪波，副总裁、首席财务官兼财务总监钟铮，独立董事肖耿，董事会秘书高书</td></tr><tr><td rowspan=1 colspan=1>投资者关系活动主要内容介绍</td><td rowspan=1 colspan=1>1.美国加征关税对公司有什么影响？答:美的集团是一家覆盖智能家居、新能源及工业技术、智能建筑科技、机器人与自动化、健康医疗、智慧物流等业务的全球领先的科技集团，已建立ToC与ToB并重发展的业务矩阵，既可为消费者提供各类智能家居的产品与服务，也可为企业客户提供多元化的商业及工业解决方案。目前，公司业务遍及200多个国家和地区，其中美国收入占比很低。在海外设有22个研发中心和23个主要制造基地，遍布南美洲、北美洲、欧洲、亚洲、非洲等区域的十多个国家。未来，公司还将持续拓展海外制造布局，推动海外新工厂的建设与投产。美的持续加强自有品牌产品研发投入，并通过本地化用户洞察与创新，不断完善全球各区域产品布局和产品竞争力，2024年美的系自有品牌在多个国家和多个家电品类均取得市场突破，如美的系冰箱产品在马来西亚、沙特、智利等国家取得市场份额第一，在越南、泰国等国家提升至市场份额第二；美的系洗衣机产品在马来西亚和沙特的市场份额分别达到第一和第二；家用空调产品在巴西、埃及的市场份额连续多年位居第一；此外，美的</td></tr></table>",
-      "image_path": "images/be35db9ee1c724586b5a9f43fc10776d3a4bb94ecb41d19ce38cf895160d4ef8.jpg"
+      "table_html": "<table><tr><td rowspan=1 colspan=1>投资者关系活动类别</td><td rowspan=1 colspan=1>□特定对象调研             □分析师会议□媒体采访                    业绩说明会□新闻发布会                □路演活动□现场参观□其他</td></tr><tr><td rowspan=1 colspan=1>参与单位名称</td><td rowspan=1 colspan=1>线上参与公司2024年度业绩说明会的投资者</td></tr><tr><td rowspan=1 colspan=1>时间</td><td rowspan=1 colspan=1>2025年4月11日</td></tr><tr><td rowspan=1 colspan=1>地点</td><td rowspan=1 colspan=1>公司</td></tr><tr><td rowspan=1 colspan=1>上市公司接待人员姓名</td><td rowspan=1 colspan=1>董事长兼总裁方洪波，副总裁、首席财务官兼财务总监钟铮，独立董事肖耿，董事会秘书高书</td></tr><tr><td rowspan=1 colspan=1>投资者关系活动主要内容介绍</td><td rowspan=1 colspan=1>1.美国加征关税对公司有什么影响？答:美的集团是一家覆盖智能家居、新能源及工业技术、智能建筑科技、机器人与自动化、健康医疗、智慧物流等业务的全球领先的科技集团，已建立ToC与ToB并重发展的业务矩阵，既可为消费者提供各类智能家居的产品与服务，也可为企业客户提供多元化的商业及工业解决方案。目前，公司业务遍及200多个国家和地区，其中美国收入占比很低。在海外设有22个研发中心和23个主要制造基地，遍布南美洲、北美洲、欧洲、亚洲、非洲等区域的十多个国家。未来，公司还将持续拓展海外制造布局，推动海外新工厂的建设与投产。美的持续加强自有品牌产品研发投入，并通过本地化用户洞察与创新，不断完善全球各区域产品布局和产品竞争力，2024年美的系自有品牌在多个国家和多个家电品类均取得市场突破，如美的系冰箱产品在马来西亚、沙特、智利等国家取得市场份额第一，在越南、泰国等国家提升至市场份额第二；美的系洗衣机产品在马来西亚和沙特的市场份额分别达到第一和第二；家用空调产品在巴西、埃及的市场份额连续多年位居第一；此外，美的</td></tr></table>"
     },
     {
       "ir_id": "ir_activity_ir_0001",
@@ -921,14 +898,14 @@
       "text": "23 / 24"
     },
     {
+      "image_path": "images/e270ba8a1f272deea48148fd02e140c8d295ea7d365cd3485bf46b75c38222df.jpg",
       "ir_id": "ir_activity_ir_0129",
       "kind": "table",
       "order_index": 129,
       "source_item_index": 129,
       "table_caption": [],
       "table_footnote": [],
-      "table_html": "<table><tr><td>有）</td><td></td></tr><tr><td>日期</td><td>2025年4月</td></tr></table>",
-      "image_path": "images/e270ba8a1f272deea48148fd02e140c8d295ea7d365cd3485bf46b75c38222df.jpg"
+      "table_html": "<table><tr><td>有）</td><td></td></tr><tr><td>日期</td><td>2025年4月</td></tr></table>"
     },
     {
       "ir_id": "ir_activity_ir_0130",
@@ -937,5 +914,28 @@
       "source_item_index": 130,
       "text": "24 / 24"
     }
-  ]
+  ],
+  "parsed_pages": {
+    "end_page_no": 24,
+    "full_pdf": true,
+    "start_page_no": 1
+  },
+  "parser": {
+    "backend": "pipeline",
+    "formula": false,
+    "language": "ch",
+    "method": "auto",
+    "name": "MinerU",
+    "package_version": "3.4.0",
+    "table": true
+  },
+  "parser_artifacts": {
+    "artifact_root_relpath": "parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto",
+    "content_list_relpath": "parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887_content_list.json",
+    "markdown_relpath": "parser_artifacts/_phase00/ir_activity_probe/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887/auto/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887.md"
+  },
+  "sample_key": "ir_activity",
+  "sample_role": "ir_activity.pdf",
+  "source_pdf": "tmp/sample_filings/000333_美的集团/2025-04-11__investor_relations__000333__美的集团：2025年4月11日投资者关系活动记录表__1223071887.pdf",
+  "title": "美的集团：2025年4月11日投资者关系活动记录表"
 }

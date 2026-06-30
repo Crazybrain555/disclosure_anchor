@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from disclosure_anchor.adapters.db.postgres import mappers, models
 from disclosure_anchor.domain import entities as e
+from disclosure_anchor.domain.errors import DocumentIdentityConflictError
 
 
 class CompanyRepository:
@@ -117,7 +119,15 @@ class DocumentRepository:
     def add(self, document: e.Document) -> e.Document:
         row = mappers.document_to_model(document)
         self._session.add(row)
-        self._session.flush()
+        try:
+            self._session.flush()
+        except IntegrityError as exc:
+            detail = str(getattr(exc, "orig", exc))
+            if "uq_document_provider_doc_hash" in detail:
+                raise DocumentIdentityConflictError(
+                    "document provider/document/hash already exists"
+                ) from exc
+            raise
         return mappers.document_to_entity(row)
 
     def get(self, document_id: str) -> Optional[e.Document]:

@@ -31,6 +31,10 @@ class RegistrationMetadataError(DisclosureAnchorError):
     """Raised when registration metadata conflicts with existing records."""
 
 
+class DocumentIdentityConflictError(DisclosureAnchorError):
+    """Raised when a document identity unique constraint is hit."""
+
+
 class ParserError(DisclosureAnchorError):
     """Raised when parser execution or artifact mapping fails."""
 

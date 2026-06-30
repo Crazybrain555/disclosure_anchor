@@ -1,0 +1,3 @@
+Content list: parser_artifacts/_phase00/annual_report_excerpt/auto/annual_report_excerpt_content_list.json
+Markdown: parser_artifacts/_phase00/annual_report_excerpt/auto/annual_report_excerpt.md
+Note: excerpt fixture paths are relative placeholders for clean-checkout schema validation.

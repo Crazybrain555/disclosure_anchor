@@ -12,6 +12,7 @@ from disclosure_anchor.adapters.parsers.mineru.mapper_to_ir import (
 )
 from disclosure_anchor.adapters.parsers.mineru.mineru_process import MinerUProcess
 from disclosure_anchor.application.ports.parser import ParserOptions, ParserResult
+from disclosure_anchor.domain.errors import ParserError
 
 
 class MinerUDocumentParser:
@@ -29,6 +30,7 @@ class MinerUDocumentParser:
         self._reader = reader or MinerUArtifactReader()
         self._mapper = mapper or MinerUToNormalizedIRMapper()
         self._parser_version = parser_version
+        self._version_cache: str | None = parser_version
 
     def parse(
         self,
@@ -41,7 +43,7 @@ class MinerUDocumentParser:
         self._process.run(input_pdf=input_pdf, output_dir=output_dir, options=options)
         artifacts = self._reader.locate(output_dir)
         content_list = self._reader.read_content_list(artifacts.content_list_path)
-        parser_version = self._parser_version or self._process.version()
+        parser_version, warnings = self._parser_version_with_warnings()
         parser_info = MinerUParserInfo(
             name="MinerU",
             package_version=parser_version,
@@ -57,6 +59,8 @@ class MinerUDocumentParser:
             document_metadata=document_metadata,
             parser_artifacts={},
         )
+        if warnings:
+            normalized_ir["warnings"] = warnings
         return ParserResult(
             parser_name=parser_info.name,
             parser_version=parser_info.package_version,
@@ -67,3 +71,12 @@ class MinerUDocumentParser:
             markdown_path=artifacts.markdown_path,
             normalized_ir=normalized_ir,
         )
+
+    def _parser_version_with_warnings(self) -> tuple[str, list[str]]:
+        if self._version_cache is not None:
+            return self._version_cache, []
+        try:
+            self._version_cache = self._process.version()
+        except ParserError:
+            return "unknown", ["version_probe_failed"]
+        return self._version_cache, []

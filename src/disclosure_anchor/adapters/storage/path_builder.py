@@ -142,12 +142,19 @@ class FileStorePathBuilder:
         return _assert_relative(relpath)
 
     def document_units_snapshot_relpath(
-        self, *, document_id: str, processing_run_id: str
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
     ) -> Path:
         relpath = (
             Path("derived")
             / "document_unit_snapshots"
-            / _safe_component(document_id, label="document_id")
+            / _safe_component(provider, label="provider")
+            / _safe_component(security_code, label="security_code")
+            / _safe_component(provider_document_id, label="provider_document_id")
             / _safe_component(processing_run_id, label="processing_run_id")
             / "document_units.v1.jsonl"
         )

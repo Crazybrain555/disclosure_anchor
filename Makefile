@@ -1,4 +1,4 @@
-ifneq ($(wildcard .venv/bin/python),)
+ifeq ($(shell test -x .venv/bin/python && echo yes),yes)
 PYTHON ?= .venv/bin/python
 else
 PYTHON ?= /opt/miniconda3/bin/python3
@@ -6,6 +6,8 @@ endif
 PYTHONPATH ?= src
 API_HOST ?= 127.0.0.1
 API_PORT ?= 8711
+ARCHIVE_DIR ?= dist
+ARCHIVE_NAME ?= disclosure-anchor-source.tar.gz
 
 # Local PostgreSQL cluster (Homebrew postgresql@18, PGDATA on AgentSSD).
 # Override on the command line or via the environment; never hard-code secrets.
@@ -16,7 +18,7 @@ PGLOG ?= /Volumes/AgentSSD/agent_system/postgres/logs/disclosure-anchor-pg18.log
 PGPORT ?= 55432
 
 .PHONY: doctor test test-unit test-contract test-data test-integration api \
-	pg-init pg-start pg-stop pg-status db-create migrate
+	archive pg-init pg-start pg-stop pg-status db-create migrate
 
 doctor:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m disclosure_anchor.cli.doctor
@@ -38,6 +40,11 @@ test-integration:
 
 api:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m uvicorn disclosure_anchor.main:create_app --factory --host $(API_HOST) --port $(API_PORT)
+
+archive:
+	mkdir -p "$(ARCHIVE_DIR)"
+	git archive --format=tar.gz --output="$(ARCHIVE_DIR)/$(ARCHIVE_NAME)" HEAD
+	@echo "[ok] wrote $(ARCHIVE_DIR)/$(ARCHIVE_NAME) from tracked files in HEAD"
 
 # --- PostgreSQL cluster lifecycle (explicit pg_ctl; never brew services) ------
 

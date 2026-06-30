@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -10,7 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from disclosure_anchor.application.ports.file_store import FileStorePathPort
+from disclosure_anchor.application.ports.file_store import (
+    ArtifactStorePort,
+    FileStorePathPort,
+    RawDocumentStorePort,
+)
 from disclosure_anchor.application.ports.parser import DocumentParserPort, ParserOptions
 from disclosure_anchor.application.ports.unit_of_work import UnitOfWork
 from disclosure_anchor.domain import entities as e
@@ -34,6 +37,14 @@ class ParseDocumentResult:
     error: str | None = None
 
 
+@dataclass(frozen=True)
+class _ParseRunFailure(Exception):
+    stage: str
+    error_code: str
+    retryable: bool
+    message: str
+
+
 class ParseDocument:
     """Use case for the Phase 04 parse step."""
 
@@ -42,15 +53,20 @@ class ParseDocument:
         *,
         parser: DocumentParserPort,
         path_builder: FileStorePathPort,
+        raw_store: RawDocumentStorePort,
+        artifact_store: ArtifactStorePort,
         uow_factory: Callable[[], UnitOfWork],
     ) -> None:
         self._parser = parser
         self._paths = path_builder
+        self._raw_store = raw_store
+        self._artifact_store = artifact_store
         self._uow_factory = uow_factory
 
     def execute(self, command: ParseDocumentCommand) -> ParseDocumentResult:
         context = self._prepare_run(command.document_id)
         try:
+            self._verify_raw_document(context)
             parser_result = self._parser.parse(
                 input_pdf=context["input_pdf"],
                 output_dir=context["artifact_root_path"],
@@ -69,15 +85,40 @@ class ParseDocument:
                 content_list_relpath=artifact_relpaths["content_list"],
                 markdown_relpath=artifact_relpaths["markdown"],
             )
-            normalized_ir_hash = self._write_normalized_ir(
+            normalized_ir_result = self._artifact_store.write_json_atomic(
                 relpath=context["normalized_ir_relpath"],
                 payload=parser_result.normalized_ir,
+            )
+            normalized_ir_hash = normalized_ir_result.artifact_hash
+        except _ParseRunFailure as exc:
+            run = self._finish_run(
+                processing_run_id=context["processing_run_id"],
+                status="failed",
+                error=self._structured_error(
+                    stage=exc.stage,
+                    error_code=exc.error_code,
+                    retryable=exc.retryable,
+                    message=exc.message,
+                ),
+            )
+            return ParseDocumentResult(
+                processing_run_id=run.processing_run_id,
+                status=run.status,
+                parser_artifact_relpath=run.parser_artifact_relpath,
+                normalized_ir_relpath=run.normalized_ir_relpath,
+                artifact_hash=run.artifact_hash,
+                error=run.error,
             )
         except Exception as exc:
             run = self._finish_run(
                 processing_run_id=context["processing_run_id"],
                 status="failed",
-                error=str(exc),
+                error=self._structured_error(
+                    stage="parse",
+                    error_code=exc.__class__.__name__,
+                    retryable=True,
+                    message=str(exc),
+                ),
             )
             return ParseDocumentResult(
                 processing_run_id=run.processing_run_id,
@@ -182,6 +223,26 @@ class ParseDocument:
                 f"document {document.document_id} missing parse metadata: {missing}"
             )
 
+    def _verify_raw_document(self, context: dict[str, Any]) -> None:
+        document = context["document"]
+        verification = self._raw_store.verify_raw_document(
+            relpath=Path(document.raw_file_relpath),
+            expected_hash=document.raw_file_hash,
+        )
+        if verification.ok:
+            return
+        error_code = (
+            "raw_missing"
+            if verification.actual_hash is None
+            else "raw_hash_mismatch"
+        )
+        raise _ParseRunFailure(
+            stage="raw_verification",
+            error_code=error_code,
+            retryable=False,
+            message=verification.message,
+        )
+
     def _artifact_relpaths(
         self,
         *,
@@ -199,15 +260,6 @@ class ParseDocument:
             "content_list": relpath(content_list_path),
             "markdown": relpath(markdown_path) if markdown_path is not None else None,
         }
-
-    def _write_normalized_ir(self, *, relpath: Path, payload: dict[str, Any]) -> str:
-        path = self._paths.data_path(relpath)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        raw = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode(
-            "utf-8"
-        )
-        path.write_bytes(raw)
-        return "sha256:" + hashlib.sha256(raw).hexdigest()
 
     def _finish_run(
         self,
@@ -242,6 +294,20 @@ class ParseDocument:
             updated = uow.processing_runs.update(run)
             uow.commit()
             return updated
+
+    def _structured_error(
+        self, *, stage: str, error_code: str, retryable: bool, message: str
+    ) -> str:
+        return json.dumps(
+            {
+                "stage": stage,
+                "error_code": error_code,
+                "retryable": retryable,
+                "message": message,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
 
 
 def artifact_relpath_map(

@@ -7,11 +7,15 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from disclosure_anchor.application.ports.file_store import RawDocumentStorePort
+from disclosure_anchor.application.ports.file_store import (
+    RawDocumentStorePort,
+    RawDocumentWriteResult,
+)
 from disclosure_anchor.application.ports.unit_of_work import UnitOfWork
 from disclosure_anchor.domain import entities as e
 from disclosure_anchor.domain import ids
 from disclosure_anchor.domain.errors import (
+    DocumentIdentityConflictError,
     InvalidRawDocumentError,
     RegistrationMetadataError,
 )
@@ -87,6 +91,22 @@ class RegisterLocalPdf:
                 quarantine_reason=str(exc),
             )
 
+        try:
+            return self._register_after_raw_archive(command=command, raw=raw)
+        except DocumentIdentityConflictError:
+            with self._uow_factory() as uow:
+                existing = uow.documents.get_by_provider_document_and_hash(
+                    provider=command.provider,
+                    provider_document_id=command.provider_document_id,
+                    raw_file_hash=raw.raw_file_hash,
+                )
+                if existing is not None:
+                    return self._reused_existing_result(existing)
+            raise
+
+    def _register_after_raw_archive(
+        self, *, command: RegisterLocalPdfCommand, raw: RawDocumentWriteResult
+    ) -> RegisterLocalPdfResult:
         now = datetime.now(timezone.utc)
         with self._uow_factory() as uow:
             existing = uow.documents.get_by_provider_document_and_hash(
@@ -95,14 +115,7 @@ class RegisterLocalPdf:
                 raw_file_hash=raw.raw_file_hash,
             )
             if existing is not None:
-                return RegisterLocalPdfResult(
-                    document_id=existing.document_id,
-                    raw_file_relpath=existing.raw_file_relpath,
-                    raw_file_hash=existing.raw_file_hash,
-                    source_access_id=existing.source_access_id,
-                    outbox_event_id=None,
-                    reused_existing_document=True,
-            )
+                return self._reused_existing_result(existing)
 
             company = uow.companies.get_by_legal_name(command.company_legal_name)
             security = uow.securities.get_by_code_exchange(
@@ -209,6 +222,17 @@ class RegisterLocalPdf:
                 self._company_for_existing_security(
                     uow=uow, command=command, security=security
                 )
+
+    @staticmethod
+    def _reused_existing_result(existing: e.Document) -> RegisterLocalPdfResult:
+        return RegisterLocalPdfResult(
+            document_id=existing.document_id,
+            raw_file_relpath=existing.raw_file_relpath,
+            raw_file_hash=existing.raw_file_hash,
+            source_access_id=existing.source_access_id,
+            outbox_event_id=None,
+            reused_existing_document=True,
+        )
 
     @staticmethod
     def _company_for_existing_security(

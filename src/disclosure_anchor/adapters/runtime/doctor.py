@@ -67,6 +67,42 @@ def _check_under_root(name: str, path: Path, root: Path) -> CheckResult:
     return CheckResult(name=name, status="FAIL", message=f"{path} is not under {root}")
 
 
+def _nearest_existing_parent(path: Path) -> Path | None:
+    current = path
+    while not current.exists():
+        if current.parent == current:
+            return None
+        current = current.parent
+    return current
+
+
+def _check_same_filesystem(name: str, left: Path, right: Path) -> CheckResult:
+    left_existing = _nearest_existing_parent(left)
+    right_existing = _nearest_existing_parent(right)
+    if left_existing is None or right_existing is None:
+        return CheckResult(
+            name=name,
+            status="FAIL",
+            message=f"cannot stat existing parents: {left} / {right}",
+        )
+    left_dev = left_existing.stat().st_dev
+    right_dev = right_existing.stat().st_dev
+    if left_dev == right_dev:
+        return CheckResult(
+            name=name,
+            status="PASS",
+            message=f"{left} and {right} share filesystem device {left_dev}",
+        )
+    return CheckResult(
+        name=name,
+        status="FAIL",
+        message=(
+            f"{left} and {right} are on different filesystem devices: "
+            f"{left_dev} != {right_dev}"
+        ),
+    )
+
+
 def run_doctor(settings: Settings) -> DoctorReport:
     """Run Phase 01 checks without creating or repairing external state."""
 
@@ -82,6 +118,13 @@ def run_doctor(settings: Settings) -> DoctorReport:
     checks.extend(
         _check_under_root(name, path, settings.disclosure_shared_root)
         for name, path in zip(cache_names, settings.model_cache_paths)
+    )
+    checks.append(
+        _check_same_filesystem(
+            "raw archive filesystem",
+            settings.disclosure_runtime_root / "tmp",
+            settings.disclosure_data_root / "data" / "raw_documents",
+        )
     )
 
     if settings.database_url is not None:

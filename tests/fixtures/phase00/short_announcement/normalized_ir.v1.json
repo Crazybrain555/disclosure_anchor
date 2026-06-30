@@ -1,30 +1,7 @@
 {
-  "contract_version": "normalized_ir.v1.phase00-draft",
+  "contract_version": "normalized_ir.v1",
   "created_at": "2026-06-26T14:20:50.411374+00:00",
-  "sample_key": "short_announcement",
-  "sample_role": "short_announcement.pdf",
   "document_id": "phase00_short_announcement",
-  "title": "江海股份：股票交易异常波动公告",
-  "source_pdf": "tmp/sample_filings/002484_江海股份/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481.pdf",
-  "parser": {
-    "name": "MinerU",
-    "package_version": "3.4.0",
-    "backend": "pipeline",
-    "method": "auto",
-    "language": "ch",
-    "formula": false,
-    "table": true
-  },
-  "parsed_pages": {
-    "start_page_no": 1,
-    "end_page_no": 4,
-    "full_pdf": true
-  },
-  "parser_artifacts": {
-    "content_list": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481_content_list.json",
-    "markdown": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481.md",
-    "root": "/Volumes/AgentSSD/agent_system/services/disclosure_anchor/data/parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto"
-  },
   "elements": [
     {
       "ir_id": "short_announcement_ir_0000",
@@ -243,5 +220,28 @@
       "source_item_index": 30,
       "text": "2026年6月18日"
     }
-  ]
+  ],
+  "parsed_pages": {
+    "end_page_no": 4,
+    "full_pdf": true,
+    "start_page_no": 1
+  },
+  "parser": {
+    "backend": "pipeline",
+    "formula": false,
+    "language": "ch",
+    "method": "auto",
+    "name": "MinerU",
+    "package_version": "3.4.0",
+    "table": true
+  },
+  "parser_artifacts": {
+    "artifact_root_relpath": "parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto",
+    "content_list_relpath": "parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481_content_list.json",
+    "markdown_relpath": "parser_artifacts/_phase00/short_announcement/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481/auto/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481.md"
+  },
+  "sample_key": "short_announcement",
+  "sample_role": "short_announcement.pdf",
+  "source_pdf": "tmp/sample_filings/002484_江海股份/2026-06-18__risk_or_forecast__002484__江海股份：南通江海电容器股份有限公司关于股票交易异常波动的公告__1225376481.pdf",
+  "title": "江海股份：股票交易异常波动公告"
 }

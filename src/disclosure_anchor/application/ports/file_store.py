@@ -32,6 +32,13 @@ class QuarantineResult:
     byte_count: int
 
 
+@dataclass(frozen=True)
+class ArtifactWriteResult:
+    relpath: Path
+    artifact_hash: str
+    byte_count: int
+
+
 class FileStorePathPort(Protocol):
     def raw_document_relpath(
         self,
@@ -75,7 +82,12 @@ class FileStorePathPort(Protocol):
         ...
 
     def document_units_snapshot_relpath(
-        self, *, document_id: str, processing_run_id: str
+        self,
+        *,
+        provider: str,
+        security_code: str,
+        provider_document_id: str,
+        processing_run_id: str,
     ) -> Path:
         ...
 
@@ -118,4 +130,17 @@ class RawDocumentStorePort(Protocol):
         input_file: Path,
         reason: str,
     ) -> QuarantineResult:
+        ...
+
+
+class ArtifactStorePort(Protocol):
+    def write_json_atomic(self, *, relpath: Path, payload: object) -> ArtifactWriteResult:
+        ...
+
+    def write_jsonl_atomic(
+        self, *, relpath: Path, rows: list[object]
+    ) -> ArtifactWriteResult:
+        ...
+
+    def write_text_atomic(self, *, relpath: Path, text: str) -> ArtifactWriteResult:
         ...

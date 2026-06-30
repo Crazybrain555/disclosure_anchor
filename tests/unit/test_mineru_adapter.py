@@ -9,7 +9,9 @@ from disclosure_anchor.adapters.parsers.mineru.mapper_to_ir import (
     MinerUToNormalizedIRMapper,
 )
 from disclosure_anchor.adapters.parsers.mineru.mineru_process import MinerUProcess
+from disclosure_anchor.adapters.parsers.mineru.parser import MinerUDocumentParser
 from disclosure_anchor.application.ports.parser import ParserOptions
+from disclosure_anchor.domain.errors import ParserError
 
 
 class MinerUProcessTests(unittest.TestCase):
@@ -84,7 +86,10 @@ class MinerUMapperTests(unittest.TestCase):
                 "source_pdf": "raw_documents/local/sample.pdf",
                 "title": "sample",
             },
-            parser_artifacts={"content_list_relpath": "parser_artifacts/sample.json"},
+            parser_artifacts={
+                "artifact_root_relpath": "parser_artifacts/sample",
+                "content_list_relpath": "parser_artifacts/sample/sample.json",
+            },
         )
         self.assertEqual(normalized["contract_version"], "normalized_ir.v1")
         self.assertEqual(normalized["parsed_pages"]["start_page_no"], 1)
@@ -92,6 +97,42 @@ class MinerUMapperTests(unittest.TestCase):
         self.assertEqual([item["kind"] for item in normalized["elements"]], ["text", "page_number", "table"])
         self.assertEqual(normalized["elements"][2]["table_html"], "<table></table>")
         json.dumps(normalized, ensure_ascii=False)
+
+
+class MinerUDocumentParserTests(unittest.TestCase):
+    def test_version_probe_failure_does_not_fail_successful_parse(self) -> None:
+        class VersionFailingProcess:
+            def run(self, *, input_pdf: Path, output_dir: Path, options: ParserOptions):
+                nested = output_dir / "sample" / "auto"
+                nested.mkdir(parents=True)
+                (nested / "sample_content_list.json").write_text(
+                    '[{"type": "text", "text": "hello", "page_idx": 0}]',
+                    encoding="utf-8",
+                )
+
+            def version(self) -> str:
+                raise ParserError("version failed")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            input_pdf = root / "input.pdf"
+            input_pdf.write_bytes(b"%PDF-1.4\nsample\n%%EOF\n")
+            parser = MinerUDocumentParser(process=VersionFailingProcess())
+
+            result = parser.parse(
+                input_pdf=input_pdf,
+                output_dir=root / "out",
+                options=ParserOptions(),
+                document_metadata={
+                    "document_id": "doc_01K0000000000000000000000",
+                    "source_pdf": "raw_documents/local/sample.pdf",
+                    "title": "sample",
+                },
+            )
+
+        self.assertEqual(result.parser_version, "unknown")
+        self.assertEqual(result.normalized_ir["warnings"], ["version_probe_failed"])
+        self.assertEqual(result.normalized_ir["elements"][0]["text"], "hello")
 
 
 if __name__ == "__main__":

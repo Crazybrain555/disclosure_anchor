@@ -4,6 +4,28 @@
   "title": "NormalizedIR v1",
   "type": "object",
   "additionalProperties": true,
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^/"
+          },
+          {
+            "pattern": "^[A-Za-z]:[\\\\/]"
+          },
+          {
+            "pattern": "\\.\\."
+          },
+          {
+            "pattern": "^file:"
+          }
+        ]
+      }
+    }
+  },
   "required": [
     "contract_version",
     "created_at",
@@ -20,7 +42,8 @@
       "const": "normalized_ir.v1"
     },
     "created_at": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time"
     },
     "document_id": {
       "type": "string"
@@ -49,10 +72,18 @@
           "type": "string"
         },
         "backend": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "pipeline",
+            "vlm-engine",
+            "vlm-http-client",
+            "hybrid-engine",
+            "hybrid-http-client"
+          ]
         },
         "method": {
-          "type": "string"
+          "type": "string",
+          "enum": ["auto", "txt", "ocr"]
         },
         "language": {
           "type": "string"
@@ -67,7 +98,21 @@
     },
     "parser_artifacts": {
       "type": "object",
-      "additionalProperties": true
+      "additionalProperties": {
+        "$ref": "#/$defs/relative_path"
+      },
+      "required": ["artifact_root_relpath", "content_list_relpath"],
+      "properties": {
+        "artifact_root_relpath": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "content_list_relpath": {
+          "$ref": "#/$defs/relative_path"
+        },
+        "markdown_relpath": {
+          "$ref": "#/$defs/relative_path"
+        }
+      }
     },
     "parsed_pages": {
       "type": "object",

@@ -43,7 +43,9 @@ class PathBuilderTests(unittest.TestCase):
                     processing_run_id="run_01K0000000000000000000000",
                 ),
                 builder.document_units_snapshot_relpath(
-                    document_id="doc_01K00000000000000000000000",
+                    provider="cninfo",
+                    security_code="002484",
+                    provider_document_id="1225087169",
                     processing_run_id="run_01K0000000000000000000000",
                 ),
             ]
@@ -126,6 +128,12 @@ class PathBuilderTests(unittest.TestCase):
                 provider_document_id="1225087169",
                 processing_run_id="run_01K0000000000000000000000",
             )
+            units_relpath = builder.document_units_snapshot_relpath(
+                provider="cninfo",
+                security_code="002484",
+                provider_document_id="1225087169",
+                processing_run_id="run_01K0000000000000000000000",
+            )
             self.assertEqual(
                 artifact_relpath,
                 Path(
@@ -138,6 +146,13 @@ class PathBuilderTests(unittest.TestCase):
                 Path(
                     "derived/normalized_ir/cninfo/002484/1225087169/"
                     "run_01K0000000000000000000000/normalized_ir.v1.json"
+                ),
+            )
+            self.assertEqual(
+                units_relpath,
+                Path(
+                    "derived/document_unit_snapshots/cninfo/002484/1225087169/"
+                    "run_01K0000000000000000000000/document_units.v1.jsonl"
                 ),
             )
 

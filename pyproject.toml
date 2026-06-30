@@ -19,7 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = []
+test = [
+  "jsonschema>=4",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

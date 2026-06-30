@@ -4,6 +4,8 @@ import json
 import unittest
 from pathlib import Path
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 from disclosure_anchor.adapters.parsers.mineru.artifact_reader import MinerUArtifactReader
 from disclosure_anchor.adapters.parsers.mineru.mapper_to_ir import (
     MinerUParserInfo,
@@ -13,6 +15,11 @@ from disclosure_anchor.adapters.parsers.mineru.mapper_to_ir import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "contracts" / "normalized_ir" / "normalized_ir.v1.json"
 PHASE00_ROOT = REPO_ROOT / "tests" / "fixtures" / "phase00"
+CLEAN_CHECKOUT_SAMPLE_KEYS = (
+    "annual_report_excerpt",
+    "ir_activity",
+    "short_announcement",
+)
 
 
 def _content_list_from_ref(sample_key: str) -> Path | None:
@@ -26,8 +33,42 @@ def _content_list_from_ref(sample_key: str) -> Path | None:
 
 
 class NormalizedIRContractTests(unittest.TestCase):
+    def _schema(self) -> dict:
+        return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    def _validator(self) -> Draft202012Validator:
+        schema = self._schema()
+        Draft202012Validator.check_schema(schema)
+        return Draft202012Validator(schema, format_checker=FormatChecker())
+
+    def _assert_valid(self, payload: dict, *, label: str) -> None:
+        errors = sorted(
+            self._validator().iter_errors(payload),
+            key=lambda error: list(error.path),
+        )
+        if errors:
+            details = "\n".join(
+                f"{label}:{'/'.join(map(str, error.path))}: {error.message}"
+                for error in errors[:10]
+            )
+            self.fail(details)
+
+    def _assert_invalid(self, payload: dict, *, label: str, path: tuple[str, ...]) -> None:
+        errors = sorted(
+            self._validator().iter_errors(payload),
+            key=lambda error: list(error.path),
+        )
+        if not any(tuple(error.path) == path for error in errors):
+            details = "\n".join(
+                f"{label}:{'/'.join(map(str, error.path))}: {error.message}"
+                for error in errors[:10]
+            )
+            self.fail(
+                f"{label}: expected schema error at {'/'.join(path)}, got:\n{details}"
+            )
+
     def test_schema_has_phase04_required_contract_shape(self) -> None:
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        schema = self._schema()
         required = set(schema["required"])
         self.assertIn("parser_artifacts", required)
         self.assertIn("elements", required)
@@ -36,20 +77,38 @@ class NormalizedIRContractTests(unittest.TestCase):
             element_required,
             {"ir_id", "kind", "order_index", "source_item_index"},
         )
+        Draft202012Validator.check_schema(schema)
 
-    def test_phase00_golden_fixtures_match_schema_required_keys(self) -> None:
-        for sample_key in ("annual_report", "ir_activity", "short_announcement"):
+    def test_clean_checkout_phase00_fixtures_validate_against_schema(self) -> None:
+        for sample_key in CLEAN_CHECKOUT_SAMPLE_KEYS:
             data = json.loads(
                 (PHASE00_ROOT / sample_key / "normalized_ir.v1.json").read_text(
                     encoding="utf-8"
                 )
             )
-            missing = set(json.loads(SCHEMA_PATH.read_text())["required"]) - data.keys()
-            self.assertFalse(missing, f"{sample_key} missing keys: {sorted(missing)}")
+            self._assert_valid(data, label=sample_key)
             self.assertGreater(len(data["elements"]), 0, sample_key)
-            for index, element in enumerate(data["elements"][:20]):
-                for key in ("ir_id", "kind", "order_index", "source_item_index"):
-                    self.assertIn(key, element, f"{sample_key}:{index}")
+
+    def test_optional_full_annual_fixture_validates_when_present(self) -> None:
+        path = PHASE00_ROOT / "annual_report" / "normalized_ir.v1.json"
+        if not path.is_file():
+            self.skipTest("optional full annual_report normalized_ir fixture is absent")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        self._assert_valid(data, label="annual_report")
+
+    def test_parser_artifacts_reject_extra_absolute_paths(self) -> None:
+        data = json.loads(
+            (
+                PHASE00_ROOT / "short_announcement" / "normalized_ir.v1.json"
+            ).read_text(encoding="utf-8")
+        )
+        data["parser_artifacts"]["legacy_root"] = "/Volumes/AgentSSD/leak"
+
+        self._assert_invalid(
+            data,
+            label="parser_artifacts_extra_absolute_path",
+            path=("parser_artifacts", "legacy_root"),
+        )
 
     def test_mapper_accepts_real_phase00_mineru_content_list_when_available(self) -> None:
         content_list_path = _content_list_from_ref("short_announcement")
@@ -76,13 +135,44 @@ class NormalizedIRContractTests(unittest.TestCase):
                 "sample_key": "short_announcement",
             },
             parser_artifacts={
-                "content_list_relpath": "parser_artifacts/short/content_list.json"
+                "artifact_root_relpath": "parser_artifacts/short",
+                "content_list_relpath": "parser_artifacts/short/content_list.json",
             },
         )
+        self._assert_valid(normalized, label="real_mapper_smoke")
         self.assertEqual(len(normalized["elements"]), len(content_list))
         self.assertEqual(normalized["elements"][0]["text"], content_list[0]["text"])
         self.assertEqual(normalized["parsed_pages"]["start_page_no"], 1)
         self.assertGreaterEqual(normalized["parsed_pages"]["end_page_no"], 1)
+
+    def test_mapper_synthetic_output_validates_against_schema(self) -> None:
+        normalized = MinerUToNormalizedIRMapper().map_content_list(
+            content_list=[
+                {"type": "text", "text": "正文", "page_idx": 0},
+                {"type": "table", "page_idx": 0, "table_body": "<table></table>"},
+            ],
+            parser_info=MinerUParserInfo(
+                name="MinerU",
+                package_version="3.4.0",
+                backend="pipeline",
+                method="auto",
+                language="ch",
+                formula=False,
+                table=True,
+            ),
+            document_metadata={
+                "document_id": "phase04_synthetic_mapper",
+                "source_pdf": "raw_documents/local/sample.pdf",
+                "title": "synthetic mapper",
+            },
+            parser_artifacts={
+                "artifact_root_relpath": "parser_artifacts/local/sample",
+                "content_list_relpath": (
+                    "parser_artifacts/local/sample/sample_content_list.json"
+                ),
+            },
+        )
+        self._assert_valid(normalized, label="synthetic_mapper")
 
 
 if __name__ == "__main__":

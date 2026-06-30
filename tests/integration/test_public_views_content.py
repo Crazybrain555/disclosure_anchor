@@ -91,12 +91,14 @@ class PublicViewContentTests(unittest.TestCase):
 
             ref_row = conn.execute(
                 text(
-                    "SELECT provider, provider_document_id, raw_file_hash, "
+                    "SELECT service, contract_version, provider, provider_document_id, raw_file_hash, "
                     "unit_content_hash FROM disclosure_public.source_refs_v1 "
                     "WHERE document_unit_id = :v"
                 ),
                 {"v": self.unit_id},
             ).mappings().one()
+            self.assertEqual(ref_row["service"], "disclosure_anchor")
+            self.assertEqual(ref_row["contract_version"], "source_ref.v1")
             self.assertEqual(ref_row["provider"], "cninfo")
             self.assertEqual(ref_row["provider_document_id"], "1225087169")
             self.assertEqual(ref_row["raw_file_hash"], "sha256:abc")

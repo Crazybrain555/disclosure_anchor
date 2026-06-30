@@ -156,6 +156,18 @@ class Document(Base):
         Index("ix_document_source_access", "source_access_id"),
         Index("ix_document_provider_ref", "provider", "provider_document_id"),
         Index("ix_document_raw_hash", "raw_file_hash"),
+        Index(
+            "uq_document_provider_doc_hash",
+            "provider",
+            "provider_document_id",
+            "raw_file_hash",
+            unique=True,
+            postgresql_where=text(
+                "provider IS NOT NULL "
+                "AND provider_document_id IS NOT NULL "
+                "AND raw_file_hash IS NOT NULL"
+            ),
+        ),
         {"schema": CORE_SCHEMA},
     )
 
